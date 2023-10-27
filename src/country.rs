@@ -1,6 +1,7 @@
 use std::fs;
 use serde::Deserialize;
 use serde_xml_rs;
+use core::slice;
 
 // This struct defines the datatype of an Edge, which is the cost to get to a city as a float
 #[derive(Debug, Deserialize)]
@@ -15,6 +16,16 @@ pub struct Edge {
 pub struct Vertex {
     #[serde(rename = "edge")]
     pub edges: Vec<Edge>,
+}
+
+// Implements Trait IntoIterator for Vertex so that it can be converted to an iterator - allowing for it to be looped through
+impl<'a> IntoIterator for &'a Vertex {
+    type Item = &'a Edge;
+    type IntoIter = slice::Iter<'a, Edge>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.edges.iter()
+    }
 }
 
 // This struct defines the graph, which is a Vector of all the Vertexs
