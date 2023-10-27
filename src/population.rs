@@ -78,7 +78,7 @@ impl Population {
         }
     }
 
-    pub fn tournament(&mut self, tournament_size: u32, crossover_operator: u8, mutation_operator: u8, graph: &Graph) {
+    pub fn run_tournament(&self, tournament_size: u32) -> Chromosome {
         // Create a Tournament population by randomly selecting "Tournament_size" number of chromosomes from the population
         let mut tournament_population: Vec<Chromosome> = self.population
                                                                 .choose_multiple(&mut thread_rng(), tournament_size as usize)
@@ -88,11 +88,15 @@ impl Population {
         // Sort our tournament_population (using the custom implementation of PartialOrd) by cost - this restults in lowest cost first
         tournament_population.sort_by(|x, y| x.partial_cmp(y).unwrap());
 
-        // Remove the first index (and therefore cheapest chromosome) from the tournament population
-        let first_parent = tournament_population.remove(0);
+        // Remove and return the first index (and therefore cheapest chromosome) from the tournament population
+        tournament_population.remove(0)
+    }
 
-        // Remove new first index, as that is the second cheapest chromosome
-        let second_parent = tournament_population.remove(0);
+    pub fn tournament_selection(&mut self, tournament_size: u32, crossover_operator: u8, mutation_operator: u8, graph: &Graph) {
+
+        // Select first and second parents using tournaments
+        let first_parent = Population::run_tournament(&self, tournament_size);
+        let second_parent = Population::run_tournament(&self, tournament_size);
 
         // Use crossover to generate two children from the parents
         let (mut first_child, mut second_child) = first_parent.crossover(&second_parent, crossover_operator, graph);
