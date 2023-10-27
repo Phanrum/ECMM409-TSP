@@ -1,4 +1,4 @@
-use crate::country::{Graph, Edge};
+use crate::country::Graph;
 use rand::seq::SliceRandom;
 use rand::{thread_rng, Rng};
 use std::cmp::Ordering;
@@ -10,6 +10,7 @@ pub struct Chromosome {
     pub cost: f64,
 }
 
+// Implements PartialEq for Chromosome so two chromosomes can be tested for equality or lack thereof
 impl PartialEq for Chromosome {
     fn eq(&self, other: &Self) -> bool {
         self.cost == other.cost
@@ -57,6 +58,13 @@ fn fix_crossover(child: &mut Vec<u8>, first_parent_slice: &[u8], second_parent_s
 
 // Implement functions for Chromosome type
 impl Chromosome {
+
+    // Create chromosome from given route vector and cost
+    pub fn new (route: Vec<u8>, cost: f64) -> Self {
+        Self { route, cost }
+    }
+
+    // Randomly generate chromosome
     pub fn generation(graph: &Graph) -> Self {
         // Takes a reference to the number of cities (which is the length of the graph vector) and return Self with a randomised route through those citites
         // The route is the order the city appears in the vector whilst the number of the city relates to its index in the Graph struct
@@ -72,10 +80,10 @@ impl Chromosome {
 
         let fitness: f64 = Chromosome::fitness(&vec, graph);
         // Return this vector as the route in the Chromosome
-        return Self {
+        Self {
             route: vec,
             cost: fitness,
-        };
+        }
     }
 
     pub fn mutation(&mut self, mutation_operator: u8, graph: &Graph) {
@@ -162,19 +170,21 @@ impl Chromosome {
                         // If the city is the last city and the edge is the connection between the last and the first
                         if index == *prev as usize && edge.destination_city == *x {
                             // Add this cost to the cost variable
+                            println!("first cost {}", edge.cost);
                             cost += edge.cost
                         }
                     }
                 }
-            } else {
+            } else if i < route.len() {
 
                 // Loop through each city in the country
                 for (index, vert) in graph.vertex.iter().enumerate() {
                     // Loop through each edge between all other cities and this one
                     for edge in vert {
                         // If the city is the previous city in the route and edge is the connection to the current city in the route
-                        if index == i - 1 && edge.destination_city == *x {
+                        if index == route[i - 1] as usize && edge.destination_city == *x {
                             // Add this cost to the cost variable
+                            println!("{}: cost {}", i, edge.cost);
                             cost += edge.cost
                         }
                     }
@@ -184,4 +194,53 @@ impl Chromosome {
         // Return cost
         cost
     }
+}
+
+#[cfg(test)]
+mod test {
+    use crate::country::Country;
+    use super::*;
+
+    const SRC: &str = r#"<travellingSalesmanProblemInstance>
+    <name>burma14</name>
+    <source>TSPLIB</source>
+    <description>14-Staedte in Burma (Zaw Win)</description>
+    <doublePrecision>15</doublePrecision>
+    <ignoredDigits>5</ignoredDigits>
+    <graph>
+      <vertex>
+        <edge cost="1.530000000000000e+02">1</edge>
+        <edge cost="5.100000000000000e+02">2</edge>
+        <edge cost="7.060000000000000e+02">3</edge>
+      </vertex>
+      <vertex>
+        <edge cost="1.530000000000000e+02">0</edge>
+        <edge cost="4.220000000000000e+02">2</edge>
+        <edge cost="6.640000000000000e+02">3</edge>
+      </vertex>
+      <vertex>
+        <edge cost="5.100000000000000e+02">0</edge>
+        <edge cost="4.220000000000000e+02">1</edge>
+        <edge cost="2.890000000000000e+02">3</edge>
+      </vertex>
+      <vertex>
+        <edge cost="7.060000000000000e+02">0</edge>
+        <edge cost="6.640000000000000e+02">1</edge>
+        <edge cost="2.890000000000000e+02">2</edge>
+      </vertex>
+    </graph>
+    </travellingSalesmanProblemInstance>"#;
+
+    #[test]
+    fn check_fitness(){
+
+        let burma_small: Country = serde_xml_rs::from_str(SRC).unwrap();
+        let route = vec![2, 0, 1, 3];
+        let cost = 289.0 + 510.0 + 153.0 + 664.0;
+        let test_chromosome = Chromosome::new(route, cost);
+
+        assert_eq!(cost, Chromosome::fitness(&test_chromosome.route, &burma_small.graph), "my cost calculated {} and functions cost {}", cost, Chromosome::fitness(&test_chromosome.route, &burma_small.graph));
+    }
+
+
 }
