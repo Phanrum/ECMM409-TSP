@@ -1,4 +1,4 @@
-use crate::country::Graph;
+use crate::country::{Graph, Edge};
 use rand::seq::SliceRandom;
 use rand::{thread_rng, Rng};
 use std::cmp::Ordering;
@@ -131,7 +131,7 @@ impl Chromosome {
                 // Calculate fitness of the children
                 let first_child_fitness = Chromosome::fitness(&first_child, graph);
                 let second_child_fitness = Chromosome::fitness(&second_child, graph);
-                
+
                 // Return both children in a tuple
                 (Chromosome {route: first_child, cost: first_child_fitness}, 
                 Chromosome {route: second_child, cost: second_child_fitness})
@@ -144,10 +144,44 @@ impl Chromosome {
     }
 
     pub fn fitness(route: &Vec<u8>, graph: &Graph) -> f64 {
-        todo!()
-        // step through chromosome.route vector, first index adds nothing because thats were we start. Subsequent indices are destination - with i-1 being source
-        // use source to find correct Vertex and destination to find right cost. Sum all costs together.
-    
-        // When thats finished, find cost to get from last index to first and add that as well.
+        let mut cost: f64 = 0.0;
+
+        // Loop over all elements in chromosome
+        for (i, x) in route.iter().enumerate() {
+
+            // Cost function include travel from the last city back to the first (or in this representation first to last)
+            // This accounts for that
+            if i == 0 {
+                // Find last city
+                let prev = route.iter().last().unwrap();
+
+                // Loop through each city in country
+                for (index, vert) in graph.vertex.iter().enumerate() {
+                    // Loop over each edge between all other cities and this one
+                    for edge in vert {
+                        // If the city is the last city and the edge is the connection between the last and the first
+                        if index == *prev as usize && edge.destination_city == *x {
+                            // Add this cost to the cost variable
+                            cost += edge.cost
+                        }
+                    }
+                }
+            } else {
+
+                // Loop through each city in the country
+                for (index, vert) in graph.vertex.iter().enumerate() {
+                    // Loop through each edge between all other cities and this one
+                    for edge in vert {
+                        // If the city is the previous city in the route and edge is the connection to the current city in the route
+                        if index == i - 1 && edge.destination_city == *x {
+                            // Add this cost to the cost variable
+                            cost += edge.cost
+                        }
+                    }
+                }
+            }
+        }
+        // Return cost
+        cost
     }
 }
