@@ -26,9 +26,9 @@ struct Cli {
 fn main() {
     let cli = Cli::parse();
 
-    let Burma = Country::new(false);
-    let Brazil = Country::new(true);
+    let burma = Country::new(false);
+    let brazil = Country::new(true);
 
-    println!("There are {} cities in Burma", Burma.graph.vertex.len());
-    println!("There are {} cities in Brazil", Brazil.graph.vertex.len());
+    println!("There are {} cities in Burma", burma.graph.vertex.len());
+    println!("There are {} cities in Brazil", brazil.graph.vertex.len());
 }

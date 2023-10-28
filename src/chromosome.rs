@@ -4,9 +4,9 @@ use rand::{thread_rng, Rng};
 use std::cmp::Ordering;
 
 // This defines the chromosome in the population, it has a vector "route" which contains the city numbers in the order they're visited
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Chromosome {
-    pub route: Vec<u8>,
+    pub route: Vec<u32>,
     pub cost: f64,
 }
 
@@ -27,31 +27,49 @@ impl PartialOrd for Chromosome {
 }
 
 // Function to fix a crossover, taking the child and slices from both parents
-fn fix_crossover(child: &mut Vec<u8>, first_parent_slice: &[u8], second_parent_slice: &[u8], crossover_point: usize) {
+fn fix_crossover(child: &mut Vec<u32>, first_parent_suffix: &[u32], second_parent_suffix: &[u32], crossover_point: usize) {
 
-    // Only loop through second_parent_slice if there is two elements in child that are the same
-    if child
+    // Create vector to hold repeated values in child
+    let mut repeated = Vec::new();
+    
+    child
             // Returns iterator over the vector child
             .iter()
             // Returns index for each element in vector
             .enumerate()
-            // Returrns first element where the index is less than crossover point and the element is also in second_parent _slice
-            .find(|(j, y)| j.lt(&crossover_point) && second_parent_slice.contains(y))
-            // .find() actually returns an Option type with either an element or None, .is_none() returns True if there is an element
-            // or returns False if None
-            .is_some() {
+            // Returrns elements where the index is less than crossover point and the element is also in second_parent
+            .filter(|(j, y)| j.lt(&crossover_point) && second_parent_suffix.contains(y))
+            // For each of these elements, add them to the "repeated" vector
+            .for_each(|(j, y)| repeated.push((j,*y)));
 
-        // Loop through second_parent_slice
-        for (i, x) in second_parent_slice.iter().enumerate() {
-            // Loop through Child
-            child
-                // Return a Mutable iterator over child
-                .iter_mut()
-                .enumerate()
-                // Only consider elememts whose index is less than the crossover and whose gene is equal to the gene in second_parent_slice
-                .filter(|(index, gene)| index.lt(&crossover_point) && (**gene).eq(x) )
-                // Replace this repeated gene with the missing gene from the first_parent_slice
-                .for_each(|(_, gene)| *gene = *(first_parent_slice.get(i).unwrap()))
+    // Only loop through second_parent_slice if there is two elements in child that are the same
+    if !repeated.is_empty() {
+
+        // i is index in child of repeated num, x is repeated num
+        for (i, x) in repeated {
+
+            // Find the index of the repeated value in second_parent_slice
+            let mut location = second_parent_suffix
+                    .iter()
+                    .enumerate()
+                    .filter(|(_, y)| (*y).eq(&x))
+                    .map(|(index, _)| index)
+                    .collect::<Vec<usize>>();
+
+            // If there is repeated numbers or missing numbers in the parents slice something has gone wrong
+            if location.len() != 1 {
+                panic!()
+            } else {
+                // As location is one element long, that element is the index and we can pop it
+                let index = location.pop().unwrap();
+
+                // Replace the value at i in child with the value at index in first_parent_suffix
+                child
+                    .iter_mut()
+                    .enumerate()
+                    .filter(|(j, _)| j.eq(&i))
+                    .for_each(|(_, z)| *z = *(first_parent_suffix.get(index).unwrap()) )
+            }
         }
     }
 }
@@ -60,7 +78,7 @@ fn fix_crossover(child: &mut Vec<u8>, first_parent_slice: &[u8], second_parent_s
 impl Chromosome {
 
     // Create chromosome from given route vector and cost
-    pub fn new (route: Vec<u8>, cost: f64) -> Self {
+    pub fn new (route: Vec<u32>, cost: f64) -> Self {
         Self { route, cost }
     }
 
@@ -73,7 +91,7 @@ impl Chromosome {
         let num_cities = graph.vertex.len();
 
         // Create a vector the length of the number of the cities, initialised as a range from 0 to num_cities -1, i.e 0,1,2,3.....
-        let mut vec: Vec<u8> = (0..num_cities as u8).collect();
+        let mut vec: Vec<u32> = (0..num_cities as u32).collect();
         // Randomly shuffle the sequence of this vector
         // thread_rng() is a handle to a thread-local CSPRNG with periodic seeding from an interface to the operating system’s random number source
         vec.shuffle(&mut thread_rng());
@@ -124,17 +142,19 @@ impl Chromosome {
                 // Select crossover point, if 1 all but first gene is swapped, if self.route.len() - 1 last gene is swapped
                 let crossover_point: usize = thread_rng().gen_range(1..self.route.len());
 
+                println!("crossover point: {}", crossover_point);
+
                 // Here we split the parent vector into two slices and assign whats left of the midpoint to _parent_prefix and whats right (inclusive) to _crossover
-                let (first_parent_prefix, first_crossover) = first_parent.split_at(crossover_point);
-                let (second_parent_prefix, second_crossover) = second_parent.split_at(crossover_point);
+                let (first_parent_prefix, first_parent_suffix) = first_parent.split_at(crossover_point);
+                let (second_parent_prefix, second_parent_suffix) = second_parent.split_at(crossover_point);
                 
                 // Use .concat() method to flatten slice. _parent is on the left side and _crossover is onthe right side to preserve order
-                let mut first_child = [first_parent_prefix, second_crossover].concat();
-                let mut second_child = [second_parent_prefix, first_crossover].concat();
+                let mut first_child = [first_parent_prefix, second_parent_suffix].concat();
+                let mut second_child = [second_parent_prefix, first_parent_suffix].concat();
 
                 // Use previously defined fix_crossover function to fix the crossover should any genes be repeated in the child
-                fix_crossover(&mut first_child, first_crossover, second_crossover, crossover_point);
-                fix_crossover(&mut second_child, second_crossover, first_crossover, crossover_point);
+                fix_crossover(&mut first_child, first_parent_suffix, second_parent_suffix, crossover_point);
+                fix_crossover(&mut second_child, second_parent_suffix, first_parent_suffix, crossover_point);
 
                 // Calculate fitness of the children
                 let first_child_fitness = Chromosome::fitness(&first_child, graph);
@@ -151,7 +171,7 @@ impl Chromosome {
         }
     }
 
-    pub fn fitness(route: &Vec<u8>, graph: &Graph) -> f64 {
+    pub fn fitness(route: &Vec<u32>, graph: &Graph) -> f64 {
         let mut cost: f64 = 0.0;
 
         // Loop over all elements in chromosome
@@ -170,7 +190,6 @@ impl Chromosome {
                         // If the city is the last city and the edge is the connection between the last and the first
                         if index == *prev as usize && edge.destination_city == *x {
                             // Add this cost to the cost variable
-                            println!("first cost {}", edge.cost);
                             cost += edge.cost
                         }
                     }
@@ -184,7 +203,6 @@ impl Chromosome {
                         // If the city is the previous city in the route and edge is the connection to the current city in the route
                         if index == route[i - 1] as usize && edge.destination_city == *x {
                             // Add this cost to the cost variable
-                            println!("{}: cost {}", i, edge.cost);
                             cost += edge.cost
                         }
                     }
@@ -240,6 +258,41 @@ mod test {
         let test_chromosome = Chromosome::new(route, cost);
 
         assert_eq!(cost, Chromosome::fitness(&test_chromosome.route, &burma_small.graph), "my cost calculated {} and functions cost {}", cost, Chromosome::fitness(&test_chromosome.route, &burma_small.graph));
+    }
+
+    #[test]
+    fn check_crossover_fix() {
+
+        // first parent = [1, 4, 5, 3, 2]
+        // second parent = [1, 5, 3, 4, 2]
+        let child_original: Vec<u32> = vec![1,3,5,4,2];
+        let mut child_mut: Vec<u32> = vec![1,4,5,4,2];
+
+        // expected behaviour: checks child and sees repition in index 2 with index 0
+        // expected behaviour: replaces index 0 if child with index 0 of parent
+
+        let crossover_point = 3;
+        let first_parent_suffix: &[u32] = &[3,2];
+        let second_parent_suffix: &[u32] = &[4,2];
+
+        fix_crossover(&mut child_mut, first_parent_suffix, second_parent_suffix, crossover_point);
+        assert_eq!(child_mut, child_original, "expected: {:?} actual: {:?}", child_original, child_mut);
+
+    }
+
+    #[test]
+    fn check_crossover() {
+
+        let burma_small: Country = serde_xml_rs::from_str(SRC).unwrap();
+        let parent_one = Chromosome::generation(&burma_small.graph);
+        let parent_two = Chromosome::generation(&burma_small.graph);
+
+        let (child_one, child_two) = parent_one.crossover(&parent_two, 0, &burma_small.graph);
+        assert_ne!(child_one.route, parent_one.route);
+        assert_ne!(child_one.route, parent_two.route);
+        assert_ne!(child_two.route, parent_one.route);
+        assert_ne!(child_two.route, parent_two.route);
+        println!("first child: {:?} first parent: {:?} second parent: {:?}", child_one, parent_one, parent_two)
     }
 
 

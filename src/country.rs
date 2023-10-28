@@ -8,7 +8,7 @@ use core::slice;
 pub struct Edge {
     pub cost: f64,
     #[serde(rename = "$value")]
-    pub destination_city: u8,
+    pub destination_city: u32,
 }
 
 // This struct defines the Vertex, which is a Vector containing all the edges of a specific city
@@ -67,6 +67,5 @@ impl Country {
                 serde_xml_rs::from_str(src.as_str()).unwrap()
             }
         }
-        // import xml file and read into Country with from_str
     }
 }
