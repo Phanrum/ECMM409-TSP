@@ -1,4 +1,6 @@
-//! This module defines the structure and methods for each chromosome in the population.
+//! This module defines the structure and methods for each [`Chromosome`] in the [`Population`][pop].
+//! 
+//! [pop]: crate::population::Population
 
 use crate::country::Graph;
 use rand::seq::SliceRandom;
@@ -13,14 +15,14 @@ pub struct Chromosome {
     pub cost: f64,
 }
 
-/// Implements PartialEq for Chromosome so two chromosomes can be tested for equality or lack thereof
+/// Implements [`PartialEq`]` for Chromosome so two chromosomes can be tested for equality or lack thereof
 impl PartialEq for Chromosome {
     fn eq(&self, other: &Self) -> bool {
         self.cost == other.cost
     }
 }
 
-/// Implements PartialOrd for Chromosome so that two chromosomes can be correctly compared on cost
+/// Implements [`PartialOrd`] for Chromosome so that two chromosomes can be correctly compared on cost
 /// Rust will not implement Ordering for floats, therefore I have to cast them to intergers for the comparison
 /// All costs in the XML file were given in scientific notation but fortunatly all expand out to intergers so this is possible
 impl PartialOrd for Chromosome {
@@ -29,59 +31,19 @@ impl PartialOrd for Chromosome {
     }
 }
 
-/// Function to fix a crossover, taking the child and slices from both parents
-fn fix_crossover(child: &mut Vec<u32>, crossover_point: usize) {
- 
-    // Create a list containing every gene
-    let master_list: Vec<u32> = (0..child.len() as u32).collect();
-
-    // Only child.len() - crossover_point genes are swapped so thats the maximun number that could be duplicated
-    let mut missing_gene: Vec<u32> = Vec::with_capacity(child.len() - crossover_point);
-
-    // Iterate over the master_list and add each missing gene to missing_gene
-    master_list
-            .iter()
-            .filter(|x| !child.contains(*x))
-            .for_each(|x| missing_gene.push(*x));
-
-    // Check if there are any duplicates before dong the expensive computation below
-    if !master_list.is_empty() {
-
-        // Create a list for the index of the first duplicated gene
-        let mut duplicate_index: Vec<u32> = Vec::with_capacity(child.len() - crossover_point);
-
-        // Iterate through child
-        for (i, x) in child.iter().enumerate() {
-            // For each gene in child, iterate over child again
-            for (j, y) in child.iter().enumerate() {
-                // if the elements are the same and the index of the outer loop is 
-                // than that of the inner, add outer loop index to duplicate_index
-                if x.eq(y) && i.lt(&j) {
-                    duplicate_index.push(i as u32);
-                }
-            }
-        }
-        
-        // Zips each element from duplicate_index with its counterpart in missing_gene into an iterator of tuples
-        let replacement = zip(duplicate_index, missing_gene);
-    
-        // Loop through replacement
-        for (index, gene) in replacement {
-            // Replace old gene in child at index with gene
-            child.as_mut_slice()[index as usize] = gene
-        }
-    }
-}
-
 /// Implement functions for Chromosome type
 impl Chromosome {
 
-    /// Function to create a chromosome from given route vector and cost
+    /// Function to create a [`Chromosome`] from given route vector and cost
+    /// Only useful for testing as in all other cases we need random generation, 
+    /// use [`generation`]
+    /// 
+    /// [`generation`]: Chromosome::generation
     pub fn new (route: Vec<u32>, cost: f64) -> Self {
         Self { route, cost }
     }
 
-    /// Function to randomly generate a chromosome
+    /// Function to randomly generate a [`Chromosome`]
     pub fn generation(graph: &Graph) -> Self {
         // Takes a reference to the number of cities (which is the length of the graph vector) and return Self with a randomised route through those citites
         // The route is the order the city appears in the vector whilst the number of the city relates to its index in the Graph struct
@@ -103,7 +65,7 @@ impl Chromosome {
         }
     }
 
-    /// Function to mutate a Chromosome using multiple different methods
+    /// Function to mutate a [`Chromosome`]s genes using multiple different methods
     pub fn mutation(&mut self, mutation_operator: u8, graph: &Graph) {
         match mutation_operator {
             // Inversion
@@ -131,7 +93,52 @@ impl Chromosome {
         }
     }
 
-    /// Function to perform crossover on two chromosomes and return the children
+    /// Function to fix a crossover, taking the child and slices from both parents
+    fn fix_crossover(child: &mut Vec<u32>, crossover_point: usize) {
+ 
+        // Create a list containing every gene
+        let master_list: Vec<u32> = (0..child.len() as u32).collect();
+
+        // Only child.len() - crossover_point genes are swapped so thats the maximun number that could be duplicated
+        let mut missing_gene: Vec<u32> = Vec::with_capacity(child.len() - crossover_point);
+
+        // Iterate over the master_list and add each missing gene to missing_gene
+        master_list
+            .iter()
+            .filter(|x| !child.contains(*x))
+            .for_each(|x| missing_gene.push(*x));
+
+        // Check if there are any duplicates before dong the expensive computation below
+        if !master_list.is_empty() {
+
+            // Create a list for the index of the first duplicated gene
+            let mut duplicate_index: Vec<u32> = Vec::with_capacity(child.len() - crossover_point);
+
+            // Iterate through child
+            for (i, x) in child.iter().enumerate() {
+                // For each gene in child, iterate over child again
+                for (j, y) in child.iter().enumerate() {
+                    // if the elements are the same and the index of the outer loop is 
+                    // than that of the inner, add outer loop index to duplicate_index
+                    if x.eq(y) && i.lt(&j) {
+                        duplicate_index.push(i as u32);
+                    }
+                }
+            }
+        
+            // Zips each element from duplicate_index with its counterpart in missing_gene into an iterator of tuples
+            let replacement = zip(duplicate_index, missing_gene);
+    
+            // Loop through replacement
+            for (index, gene) in replacement {
+                // Replace old gene in child at index with gene
+                child.as_mut_slice()[index as usize] = gene
+            }
+        }
+    }
+
+
+    /// Function to perform crossover on two [`Chromosome`]s and return the children
     pub fn crossover(&self, other: &Chromosome, crossover_operator: u8, graph: &Graph) -> (Chromosome, Chromosome) {
         match crossover_operator {
             // Crossover with Fix
@@ -154,8 +161,8 @@ impl Chromosome {
                 let mut second_child = [second_parent_prefix, first_parent_suffix].concat();
 
                 // Use previously defined fix_crossover function to fix the crossover should any genes be repeated in the child
-                fix_crossover(&mut first_child, crossover_point);
-                fix_crossover(&mut second_child, crossover_point);
+                Chromosome::fix_crossover(&mut first_child, crossover_point);
+                Chromosome::fix_crossover(&mut second_child, crossover_point);
 
                 // Calculate fitness of the children
                 let first_child_fitness = Chromosome::fitness(&first_child, graph);
@@ -172,7 +179,7 @@ impl Chromosome {
         }
     }
 
-    /// Function to calculate the cost of a chromosome
+    /// Function to calculate the cost of a [`Chromosome`]
     pub fn fitness(route: &Vec<u32>, graph: &Graph) -> f64 {
         let mut cost: f64 = 0.0;
 
@@ -275,7 +282,7 @@ mod test {
 
         let crossover_point = 3;
 
-        fix_crossover(&mut child_mut, crossover_point);
+        Chromosome::fix_crossover(&mut child_mut, crossover_point);
         assert_eq!(child_mut, child_original, "expected: {:?} actual: {:?}", child_original, child_mut);
 
     }

@@ -1,4 +1,5 @@
-//! This module defines the structure and methods for the data of the country.
+//! This module creates the structure [`Country`] and methods to import data from 
+//! an XML file and deserialize into [`Country`] so that it can be used.
 
 use std::fs;
 use serde::Deserialize;

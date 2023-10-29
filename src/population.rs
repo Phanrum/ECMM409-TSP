@@ -1,3 +1,5 @@
+//! This module defines [`Population`] and all its methods
+
 use crate::chromosome::Chromosome;
 use crate::country::Graph;
 use rand::seq::SliceRandom;
@@ -20,8 +22,8 @@ pub struct Population {
 
 /// Implements methods on `Population`
 impl Population {
-    /// A Function to generate a new population based off the size of the population and the cost data
-    pub fn new(population_size: u64, graph: &Graph) -> Self {
+    /// A Function to generate a new population of [`Chromosome`]s based off the size of the population and the cost data
+    pub fn new(population_size: u64, country_data: &Graph) -> Self {
         // Initialise mutable counter variable as 0
         let mut i: u64 = 0;
 
@@ -32,7 +34,7 @@ impl Population {
         while i < population_size {
 
             // Add a new chromosome to vector "population"
-            population.push(Chromosome::generation(graph));
+            population.push(Chromosome::generation(country_data));
 
             // Increment counter
             i += 1;
@@ -128,18 +130,18 @@ impl Population {
     /// This function runs a tournament twice to obtain two parents, then it creates two children from those
     /// parents. It will take the first child and if it is better than the worst chromosome in the population
     /// it will replace it. Then it will do the same with the second child.
-    pub fn selection_and_replacement(&mut self, tournament_size: u32, crossover_operator: u8, mutation_operator: u8, graph: &Graph) {
+    pub fn selection_and_replacement(&mut self, tournament_size: u32, crossover_operator: u8, mutation_operator: u8, country_data: &Graph) {
 
         // Select first and second parents using tournaments
         let first_parent = Population::run_tournament(&self, tournament_size);
         let second_parent = Population::run_tournament(&self, tournament_size);
 
         // Use crossover to generate two children from the parents
-        let (mut first_child, mut second_child) = first_parent.crossover(&second_parent, crossover_operator, graph);
+        let (mut first_child, mut second_child) = first_parent.crossover(&second_parent, crossover_operator, country_data);
 
         // Apply mutation to the two children
-        first_child.mutation(mutation_operator, graph);
-        second_child.mutation(mutation_operator, graph);
+        first_child.mutation(mutation_operator, country_data);
+        second_child.mutation(mutation_operator, country_data);
 
         // Run replacement function with first child first
         self.replacement(first_child);
