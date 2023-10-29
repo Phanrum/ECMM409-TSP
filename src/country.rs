@@ -1,9 +1,11 @@
+//! This module defines the structure and methods for the data of the country.
+
 use std::fs;
 use serde::Deserialize;
 use serde_xml_rs;
 use core::slice;
 
-// This struct defines the datatype of an Edge, which is the cost to get to a city as a float
+/// This struct defines the datatype of an Edge, which is the cost to get to a city as a float
 #[derive(Debug, Deserialize)]
 pub struct Edge {
     pub cost: f64,
@@ -11,14 +13,14 @@ pub struct Edge {
     pub destination_city: u32,
 }
 
-// This struct defines the Vertex, which is a Vector containing all the edges of a specific city
+/// This struct defines the Vertex, which is a Vector containing all the edges of a specific city
 #[derive(Debug, Deserialize)]
 pub struct Vertex {
     #[serde(rename = "edge")]
     pub edges: Vec<Edge>,
 }
 
-// Implements Trait IntoIterator for Vertex so that it can be converted to an iterator - allowing for it to be looped through
+/// Implements Trait IntoIterator for Vertex so that it can be converted to an iterator - allowing for it to be looped through
 impl<'a> IntoIterator for &'a Vertex {
     type Item = &'a Edge;
     type IntoIter = slice::Iter<'a, Edge>;
@@ -28,14 +30,14 @@ impl<'a> IntoIterator for &'a Vertex {
     }
 }
 
-// This struct defines the graph, which is a Vector of all the Vertexs
+/// This struct defines the graph, which is a Vector of all the Vertexs
 #[derive(Debug, Deserialize)]
 pub struct Graph {
     pub vertex: Vec<Vertex>,
 }
 
-// This struct defines the root data structure containing all the information from the XML file
-// Attributes are used to rename these fields during deserialization so they match those in the XML file
+/// This struct defines the root data structure containing all the information from the XML file
+/// Attributes are used to rename these fields during deserialization so they match those in the XML file
 #[derive(Debug, Deserialize)]
 #[serde(rename = "travellingSalesmanProblemInstance")]
 #[serde(rename_all = "camelCase")]
@@ -48,9 +50,10 @@ pub struct Country {
     pub graph: Graph,
 }
 
+/// Implement methods on `Country`
 impl Country {
-    // Function to create the root structure for each countries XML file
-    // Due to there only being two files I have hardcoded Brazil as True and Burma as False so that no errors with intergers or strings can occur
+    /// Function to create the root structure for each countries XML file
+    /// Due to there only being two files I have hardcoded Brazil as True and Burma as False so that no errors with intergers or strings can occur
     pub fn new(country: bool) -> Self {
         match country {
             true => {

@@ -1,33 +1,35 @@
+//! This module defines the structure and methods for each chromosome in the population.
+
 use crate::country::Graph;
 use rand::seq::SliceRandom;
 use rand::{thread_rng, Rng};
 use std::cmp::Ordering;
 use std::iter::zip;
 
-// This defines the chromosome in the population, it has a vector "route" which contains the city numbers in the order they're visited
+/// This defines the chromosome in the population, it has a vector "route" which contains the city numbers in the order they're visited
 #[derive(Clone, Debug)]
 pub struct Chromosome {
     pub route: Vec<u32>,
     pub cost: f64,
 }
 
-// Implements PartialEq for Chromosome so two chromosomes can be tested for equality or lack thereof
+/// Implements PartialEq for Chromosome so two chromosomes can be tested for equality or lack thereof
 impl PartialEq for Chromosome {
     fn eq(&self, other: &Self) -> bool {
         self.cost == other.cost
     }
 }
 
-// Implements PartialOrd for Chromosome so that two chromosomes can be correctly compared on cost
-// Rust will not implement Ordering for floats, therefore I have to cast them to intergers for the comparison
-// All costs in the XML file were given in scientific notation but fortunatly all expand out to intergers so this is possible
+/// Implements PartialOrd for Chromosome so that two chromosomes can be correctly compared on cost
+/// Rust will not implement Ordering for floats, therefore I have to cast them to intergers for the comparison
+/// All costs in the XML file were given in scientific notation but fortunatly all expand out to intergers so this is possible
 impl PartialOrd for Chromosome {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         Some((self.cost as usize).cmp(&(other.cost as usize)))
     }
 }
 
-// Function to fix a crossover, taking the child and slices from both parents
+/// Function to fix a crossover, taking the child and slices from both parents
 fn fix_crossover(child: &mut Vec<u32>, crossover_point: usize) {
  
     // Create a list containing every gene
@@ -71,15 +73,15 @@ fn fix_crossover(child: &mut Vec<u32>, crossover_point: usize) {
     }
 }
 
-// Implement functions for Chromosome type
+/// Implement functions for Chromosome type
 impl Chromosome {
 
-    // Create chromosome from given route vector and cost
+    /// Function to create a chromosome from given route vector and cost
     pub fn new (route: Vec<u32>, cost: f64) -> Self {
         Self { route, cost }
     }
 
-    // Randomly generate chromosome
+    /// Function to randomly generate a chromosome
     pub fn generation(graph: &Graph) -> Self {
         // Takes a reference to the number of cities (which is the length of the graph vector) and return Self with a randomised route through those citites
         // The route is the order the city appears in the vector whilst the number of the city relates to its index in the Graph struct
@@ -101,6 +103,7 @@ impl Chromosome {
         }
     }
 
+    /// Function to mutate a Chromosome using multiple different methods
     pub fn mutation(&mut self, mutation_operator: u8, graph: &Graph) {
         match mutation_operator {
             // Inversion
@@ -128,6 +131,7 @@ impl Chromosome {
         }
     }
 
+    /// Function to perform crossover on two chromosomes and return the children
     pub fn crossover(&self, other: &Chromosome, crossover_operator: u8, graph: &Graph) -> (Chromosome, Chromosome) {
         match crossover_operator {
             // Crossover with Fix
@@ -168,6 +172,7 @@ impl Chromosome {
         }
     }
 
+    /// Function to calculate the cost of a chromosome
     pub fn fitness(route: &Vec<u32>, graph: &Graph) -> f64 {
         let mut cost: f64 = 0.0;
 
