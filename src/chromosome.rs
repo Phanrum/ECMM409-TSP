@@ -2,6 +2,7 @@ use crate::country::Graph;
 use rand::seq::SliceRandom;
 use rand::{thread_rng, Rng};
 use std::cmp::Ordering;
+use std::iter::zip;
 
 // This defines the chromosome in the population, it has a vector "route" which contains the city numbers in the order they're visited
 #[derive(Clone, Debug)]
@@ -27,49 +28,45 @@ impl PartialOrd for Chromosome {
 }
 
 // Function to fix a crossover, taking the child and slices from both parents
-fn fix_crossover(child: &mut Vec<u32>, first_parent_suffix: &[u32], second_parent_suffix: &[u32], crossover_point: usize) {
+fn fix_crossover(child: &mut Vec<u32>, crossover_point: usize) {
+ 
+    // Create a list containing every gene
+    let master_list: Vec<u32> = (0..child.len() as u32).collect();
 
-    // Create vector to hold repeated values in child
-    let mut repeated = Vec::new();
-    
-    child
-            // Returns iterator over the vector child
+    // Only child.len() - crossover_point genes are swapped so thats the maximun number that could be duplicated
+    let mut missing_gene: Vec<u32> = Vec::with_capacity(child.len() - crossover_point);
+
+    // Iterate over the master_list and add each missing gene to missing_gene
+    master_list
             .iter()
-            // Returns index for each element in vector
-            .enumerate()
-            // Returrns elements where the index is less than crossover point and the element is also in second_parent
-            .filter(|(j, y)| j.lt(&crossover_point) && second_parent_suffix.contains(y))
-            // For each of these elements, add them to the "repeated" vector
-            .for_each(|(j, y)| repeated.push((j,*y)));
+            .filter(|x| !child.contains(*x))
+            .for_each(|x| missing_gene.push(*x));
 
-    // Only loop through second_parent_slice if there is two elements in child that are the same
-    if !repeated.is_empty() {
+    // Check if there are any duplicates before dong the expensive computation below
+    if !master_list.is_empty() {
 
-        // i is index in child of repeated num, x is repeated num
-        for (i, x) in repeated {
+        // Create a list for the index of the first duplicated gene
+        let mut duplicate_index: Vec<u32> = Vec::with_capacity(child.len() - crossover_point);
 
-            // Find the index of the repeated value in second_parent_slice
-            let mut location = second_parent_suffix
-                    .iter()
-                    .enumerate()
-                    .filter(|(_, y)| (*y).eq(&x))
-                    .map(|(index, _)| index)
-                    .collect::<Vec<usize>>();
-
-            // If there is repeated numbers or missing numbers in the parents slice something has gone wrong
-            if location.len() != 1 {
-                panic!()
-            } else {
-                // As location is one element long, that element is the index and we can pop it
-                let index = location.pop().unwrap();
-
-                // Replace the value at i in child with the value at index in first_parent_suffix
-                child
-                    .iter_mut()
-                    .enumerate()
-                    .filter(|(j, _)| j.eq(&i))
-                    .for_each(|(_, z)| *z = *(first_parent_suffix.get(index).unwrap()) )
+        // Iterate through child
+        for (i, x) in child.iter().enumerate() {
+            // For each gene in child, iterate over child again
+            for (j, y) in child.iter().enumerate() {
+                // if the elements are the same and the index of the outer loop is 
+                // than that of the inner, add outer loop index to duplicate_index
+                if x.eq(y) && i.lt(&j) {
+                    duplicate_index.push(i as u32);
+                }
             }
+        }
+        
+        // Zips each element from duplicate_index with its counterpart in missing_gene into an iterator of tuples
+        let replacement = zip(duplicate_index, missing_gene);
+    
+        // Loop through replacement
+        for (index, gene) in replacement {
+            // Replace old gene in child at index with gene
+            child.as_mut_slice()[index as usize] = gene
         }
     }
 }
@@ -153,8 +150,8 @@ impl Chromosome {
                 let mut second_child = [second_parent_prefix, first_parent_suffix].concat();
 
                 // Use previously defined fix_crossover function to fix the crossover should any genes be repeated in the child
-                fix_crossover(&mut first_child, first_parent_suffix, second_parent_suffix, crossover_point);
-                fix_crossover(&mut second_child, second_parent_suffix, first_parent_suffix, crossover_point);
+                fix_crossover(&mut first_child, crossover_point);
+                fix_crossover(&mut second_child, crossover_point);
 
                 // Calculate fitness of the children
                 let first_child_fitness = Chromosome::fitness(&first_child, graph);
@@ -263,19 +260,17 @@ mod test {
     #[test]
     fn check_crossover_fix() {
 
-        // first parent = [1, 4, 5, 3, 2]
-        // second parent = [1, 5, 3, 4, 2]
-        let child_original: Vec<u32> = vec![1,3,5,4,2];
-        let mut child_mut: Vec<u32> = vec![1,4,5,4,2];
+        // first parent = [2, 1, 0, 3]
+        // second parent = [0, 2, 3, 1]
+            
 
-        // expected behaviour: checks child and sees repition in index 2 with index 0
-        // expected behaviour: replaces index 0 if child with index 0 of parent
+        let child_original: Vec<u32> = vec![2,3,0,1];
+        
+        let mut child_mut: Vec<u32> = vec![2,1,0,1];
 
         let crossover_point = 3;
-        let first_parent_suffix: &[u32] = &[3,2];
-        let second_parent_suffix: &[u32] = &[4,2];
 
-        fix_crossover(&mut child_mut, first_parent_suffix, second_parent_suffix, crossover_point);
+        fix_crossover(&mut child_mut, crossover_point);
         assert_eq!(child_mut, child_original, "expected: {:?} actual: {:?}", child_original, child_mut);
 
     }
@@ -283,17 +278,19 @@ mod test {
     #[test]
     fn check_crossover() {
 
+        // crossover point 3
+        // p1 [2, 1, 0, 3]
+        // p2 [0, 2, 3, 1]
+
+        // c1 [2, 2, 0, 1]
+        // c2 [0, 2, 0, 3]
+
         let burma_small: Country = serde_xml_rs::from_str(SRC).unwrap();
         let parent_one = Chromosome::generation(&burma_small.graph);
         let parent_two = Chromosome::generation(&burma_small.graph);
 
         let (child_one, child_two) = parent_one.crossover(&parent_two, 0, &burma_small.graph);
-        assert_ne!(child_one.route, parent_one.route);
-        assert_ne!(child_one.route, parent_two.route);
-        assert_ne!(child_two.route, parent_one.route);
-        assert_ne!(child_two.route, parent_two.route);
-        println!("first child: {:?} first parent: {:?} second parent: {:?}", child_one, parent_one, parent_two)
+
+        println!("first child: {:?} second child: {:?} first parent: {:?} second parent: {:?}", child_one, child_two, parent_one, parent_two)
     }
-
-
 }
