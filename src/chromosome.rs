@@ -15,7 +15,7 @@ pub struct Chromosome {
     pub cost: f64,
 }
 
-/// Implements [`PartialEq`]` for Chromosome so two chromosomes can be tested for equality or lack thereof
+/// Implements [`PartialEq`] for Chromosome so two chromosomes can be tested for equality or lack thereof
 impl PartialEq for Chromosome {
     fn eq(&self, other: &Self) -> bool {
         self.cost == other.cost

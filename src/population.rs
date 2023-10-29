@@ -11,13 +11,13 @@ pub struct Population {
     /// The number of individuals for this population.
     pub population_size: u64,
     /// The actual population (vector of individuals).
-    pub population: Vec<Chromosome>,
+    pub population_data: Vec<Chromosome>,
     /// The average cost of this population
     pub average_population_cost: f64,
-    /// The best cost of this population
-    pub best_population_cost: f64,
-    /// The worst cost of this population
-    pub worst_population_cost: f64,
+    /// The best Chromosome in the population
+    pub best_chromosome: Chromosome,
+    /// The worst Chromosome in this population
+    pub worst_chromosome: Chromosome,
 }
 
 /// Implements methods on `Population`
@@ -28,68 +28,71 @@ impl Population {
         let mut i: u64 = 0;
 
         // Initialise vector of chromosomes
-        let mut population: Vec<Chromosome> = vec![];
+        let mut population_data: Vec<Chromosome> = vec![];
         
         // Loop whilst counter is less than population size
         while i < population_size {
 
             // Add a new chromosome to vector "population"
-            population.push(Chromosome::generation(country_data));
+            population_data.push(Chromosome::generation(country_data));
 
             // Increment counter
             i += 1;
         }
 
-        // Find average cost of new Population
-        let average_population_cost = Population::find_average_cost(&population);
-        let best_population_cost = Population::find_best_cost(&population);
-        let worst_population_cost = Population::find_worst_cost(&population);
+        // Find best Chromosome in population
+        let best_chromosome = Population::find_best_chromosome(&population_data);
 
-        
+        // Find worst Chromosome in the population
+        let worst_chromosome = Population::find_worst_chromosome(&population_data);
+
+        // Find average cost of new Population
+        let average_population_cost = Population::find_average_cost(&population_data);
+
         // Return new Population
         Self { 
             population_size, 
-            population, 
+            population_data, 
             average_population_cost,
-            best_population_cost,
-            worst_population_cost,
+            best_chromosome,
+            worst_chromosome,
         }
     }
 
     /// A Function to find and return the average cost of a population given a vector of that populations chromosomes
-    pub fn find_average_cost(population: &Vec<Chromosome>) -> f64 {
+    pub fn find_average_cost(population_data: &Vec<Chromosome>) -> f64 {
         // Create mutable variable
         let mut average_cost: f64 = 0.0;
 
         // Iterate through the population, adding the cost of each chromosome divided by the number of chromosomes to average_cost
-        population.iter().for_each(|x| average_cost += (*x).cost / population.len() as f64);
+        population_data.iter().for_each(|x| average_cost += (*x).cost / population_data.len() as f64);
 
         // Return average_cost
         average_cost
     }
 
-    /// A function to find the best cost in the population
-    pub fn find_best_cost(population: &Vec<Chromosome>) -> f64 {
-        let best = population
-                .iter()
-                .min_by(|x, y| x.partial_cmp(y).unwrap())
-                .unwrap();
-        best.cost
-    }
-
-    /// A function to find the worst cost in the population
-    pub fn find_worst_cost(population: &Vec<Chromosome>) -> f64 {
-        let worst = population
+    /// A function to find the worst Chromosome in the population
+    pub fn find_worst_chromosome(population_data: &Vec<Chromosome>) -> Chromosome {
+        let worst = population_data
                 .iter()
                 .max_by(|x, y| x.partial_cmp(y).unwrap())
                 .unwrap();
-        worst.cost
+        worst.to_owned()
+    }
+
+    /// A function to find the best Cromosome in the population
+    pub fn find_best_chromosome(population_data: &Vec<Chromosome>) -> Chromosome {
+        let best = population_data
+                .iter()
+                .min_by(|x, y| x.partial_cmp(y).unwrap())
+                .unwrap();
+        best.to_owned()
     }
 
     /// A Function to implement the Replace Weakest algorithm
     fn replacement(&mut self, child: Chromosome) {
-        // Iterate over the population and find the index of the most expensive chromosome
-        let index = self.population
+        // Iterate over the population_data and find the index of the most expensive chromosome
+        let index = self.population_data
                                     .iter()
                                     .enumerate()
                                     // find most expensive chromosome
@@ -100,7 +103,7 @@ impl Population {
 
         
         // Get the most expensive chromosome from the population
-        if let Some(worst_chromosome) = self.population.get_mut(index) {
+        if let Some(worst_chromosome) = self.population_data.get_mut(index) {
 
             // Check that the cost of the worse chromosome is actually greater than the cost of the child
             if worst_chromosome.cost >= child.cost  {
@@ -115,7 +118,7 @@ impl Population {
     /// the population and returns the best ones
     fn run_tournament(&self, tournament_size: u32) -> Chromosome {
         // Create a Tournament population by randomly selecting "Tournament_size" number of chromosomes from the population
-        let mut tournament_population: Vec<Chromosome> = self.population
+        let mut tournament_population: Vec<Chromosome> = self.population_data
                                                                 .choose_multiple(&mut thread_rng(), tournament_size as usize)
                                                                 .cloned()
                                                                 .collect();

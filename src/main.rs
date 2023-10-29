@@ -1,7 +1,6 @@
 // Here I am importing my program
 use tsp_coursework::country::*;
-//use tsp_coursework::chromosome::*;
-use tsp_coursework::population::*;
+use tsp_coursework::simulation::*;
 
 // Here I am importing my external dependancies
 use clap::Parser;
@@ -29,6 +28,9 @@ fn main() {
     let burma = Country::new(false);
     let brazil = Country::new(true);
 
-    println!("There are {} cities in Burma", burma.graph.vertex.len());
-    println!("There are {} cities in Brazil", brazil.graph.vertex.len());
+    let burma_simulation = Simulation::new(burma.graph, cli.crossover_operator, cli.mutation_operator, cli.population_size, cli.tournament_size);
+
+    println!("The best Chromosome after 10,000 Generations is {:?}", burma_simulation.population.best_chromosome);
+
+
 }
