@@ -3,21 +3,25 @@ use crate::country::Graph;
 use rand::seq::SliceRandom;
 use rand::thread_rng;
 
+/// The struct defines the population
 #[derive(Clone)]
 pub struct Population {
-    // The ID of the population
-    pub id: u64,
-    // The number of individuals for this population.
-    pub num_of_individuals: u64,
-    // The actual population (vector of individuals).
+    /// The number of individuals for this population.
+    pub population_size: u64,
+    /// The actual population (vector of individuals).
     pub population: Vec<Chromosome>,
-    // The average cost of this population
-    pub average_cost: f64,
+    /// The average cost of this population
+    pub average_population_cost: f64,
+    /// The best cost of this population
+    pub best_population_cost: f64,
+    /// The worst cost of this population
+    pub worst_population_cost: f64,
 }
 
+/// Implements methods on `Population`
 impl Population {
-    // A Function to generate a new population based off the size of the population and the cost data
-    pub fn new(id: u64, population_size: u64, graph: &Graph) -> Self {
+    /// A Function to generate a new population based off the size of the population and the cost data
+    pub fn new(population_size: u64, graph: &Graph) -> Self {
         // Initialise mutable counter variable as 0
         let mut i: u64 = 0;
 
@@ -35,13 +39,22 @@ impl Population {
         }
 
         // Find average cost of new Population
-        let average_cost = Population::find_average_cost(&population);
+        let average_population_cost = Population::find_average_cost(&population);
+        let best_population_cost = Population::find_best_cost(&population);
+        let worst_population_cost = Population::find_worst_cost(&population);
+
         
         // Return new Population
-        Self { id, num_of_individuals: population_size, population, average_cost }
+        Self { 
+            population_size, 
+            population, 
+            average_population_cost,
+            best_population_cost,
+            worst_population_cost,
+        }
     }
 
-    // A Function to find and return the average cost of a population given a vector of that populations chromosomes
+    /// A Function to find and return the average cost of a population given a vector of that populations chromosomes
     pub fn find_average_cost(population: &Vec<Chromosome>) -> f64 {
         // Create mutable variable
         let mut average_cost: f64 = 0.0;
@@ -53,7 +66,25 @@ impl Population {
         average_cost
     }
 
-    // A Function to implement the Replace Weakest algorithm
+    /// A function to find the best cost in the population
+    pub fn find_best_cost(population: &Vec<Chromosome>) -> f64 {
+        let best = population
+                .iter()
+                .min_by(|x, y| x.partial_cmp(y).unwrap())
+                .unwrap();
+        best.cost
+    }
+
+    /// A function to find the worst cost in the population
+    pub fn find_worst_cost(population: &Vec<Chromosome>) -> f64 {
+        let worst = population
+                .iter()
+                .max_by(|x, y| x.partial_cmp(y).unwrap())
+                .unwrap();
+        worst.cost
+    }
+
+    /// A Function to implement the Replace Weakest algorithm
     pub fn replacement(&mut self, child: Chromosome) {
         // Iterate over the population and find the index of the most expensive chromosome
         let index = self.population
@@ -78,6 +109,7 @@ impl Population {
         }
     }
 
+    ///
     pub fn run_tournament(&self, tournament_size: u32) -> Chromosome {
         // Create a Tournament population by randomly selecting "Tournament_size" number of chromosomes from the population
         let mut tournament_population: Vec<Chromosome> = self.population
@@ -92,6 +124,7 @@ impl Population {
         tournament_population.remove(0)
     }
 
+    ///
     pub fn tournament_selection(&mut self, tournament_size: u32, crossover_operator: u8, mutation_operator: u8, graph: &Graph) {
 
         // Select first and second parents using tournaments
