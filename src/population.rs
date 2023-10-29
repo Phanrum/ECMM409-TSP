@@ -85,7 +85,7 @@ impl Population {
     }
 
     /// A Function to implement the Replace Weakest algorithm
-    pub fn replacement(&mut self, child: Chromosome) {
+    fn replacement(&mut self, child: Chromosome) {
         // Iterate over the population and find the index of the most expensive chromosome
         let index = self.population
                                     .iter()
@@ -109,8 +109,9 @@ impl Population {
         }
     }
 
-    ///
-    pub fn run_tournament(&self, tournament_size: u32) -> Chromosome {
+    /// This function takes a tournament size, randomly picks that many chromosomes from 
+    /// the population and returns the best ones
+    fn run_tournament(&self, tournament_size: u32) -> Chromosome {
         // Create a Tournament population by randomly selecting "Tournament_size" number of chromosomes from the population
         let mut tournament_population: Vec<Chromosome> = self.population
                                                                 .choose_multiple(&mut thread_rng(), tournament_size as usize)
@@ -124,8 +125,10 @@ impl Population {
         tournament_population.remove(0)
     }
 
-    ///
-    pub fn tournament_selection(&mut self, tournament_size: u32, crossover_operator: u8, mutation_operator: u8, graph: &Graph) {
+    /// This function runs a tournament twice to obtain two parents, then it creates two children from those
+    /// parents. It will take the first child and if it is better than the worst chromosome in the population
+    /// it will replace it. Then it will do the same with the second child.
+    pub fn selection_and_replacement(&mut self, tournament_size: u32, crossover_operator: u8, mutation_operator: u8, graph: &Graph) {
 
         // Select first and second parents using tournaments
         let first_parent = Population::run_tournament(&self, tournament_size);
