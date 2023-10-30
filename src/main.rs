@@ -8,6 +8,12 @@ use clap::Parser;
 // Plotters is used to create plots of the data
 use plotters::prelude::*;
 
+use indicatif::{MultiProgress, ProgressBar, ProgressState, ProgressStyle};
+use std::fmt::Write;
+
+/// This is hardcoded for the course requirement
+const NUMBER_OF_GENERATIONS: usize = 10000;
+
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
 struct Cli {
@@ -28,12 +34,26 @@ struct Cli {
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let cli = Cli::parse();
 
+    let multi_bar = MultiProgress::new();
+    let bar_style = ProgressStyle::with_template("[{elapsed_precise}] [{wide_bar:.cyan/blue}] [{percent}%] ({eta}) {msg}")
+        .unwrap()
+        .with_key("eta", |state: &ProgressState, w: &mut dyn Write| write!(w, "{:.1}s", state.eta().as_secs_f64()).unwrap())
+        .progress_chars("#>-");
+
+    let brazil_bar = multi_bar.add(ProgressBar::new(NUMBER_OF_GENERATIONS as u64));
+    let burma_bar = multi_bar.add(ProgressBar::new(NUMBER_OF_GENERATIONS as u64));
+
+    brazil_bar.set_style(bar_style.clone());
+    burma_bar.set_style(bar_style);
+
     let burma = Country::new(false);
     let brazil = Country::new(true);
 
     let mut brazil_simulation = Simulation::new(brazil, cli.crossover_operator, cli.mutation_operator, cli.population_size, cli.tournament_size);
-    brazil_simulation.run();
-    
+    let mut burma_simulation = Simulation::new(burma, cli.crossover_operator, cli.mutation_operator, cli.population_size, cli.tournament_size);
+    brazil_simulation.run(brazil_bar);
+    burma_simulation.run(burma_bar);
+
 
     // Create a drawing area with a specified size and coordinate range
     let root = BitMapBackend::new("chart.png", (1920, 1080)).into_drawing_area();
@@ -68,8 +88,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     root.present()?;
 
-    println!("The best Chromosome after 10,000 Generations is {:?}", brazil_simulation.population.best_chromosome.cost);
-    println!("The worst Chromosome after 10,000 Generations is {:?}", brazil_simulation.population.worst_chromosome.cost);
+    println!("The best Chromosome in Brazil {:?}", brazil_simulation.population.best_chromosome.cost);
+    println!("The worst Chromosome in Burma {:?}", burma_simulation.population.worst_chromosome.cost);
 
     Ok(())
 }

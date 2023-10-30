@@ -1,14 +1,13 @@
 //! This module defines the structure [`Simulation`] and methods for the Simulation of the [`Population`].
 
-use indicatif::{ProgressBar, ProgressState, ProgressStyle};
-use std::fmt::Write;
+use indicatif::ProgressBar;
 
 use crate::chromosome::Chromosome;
 use crate::country::Country;
 use crate::population::Population;
 
 /// This is hardcoded for the course requirement
-const NUMBER_OF_GENERATIONS: usize = 10000;
+//const NUMBER_OF_GENERATIONS: usize = 10000;
 
 /// The `Simulation` type, which contains all the information needed to run the simultation 
 pub struct Simulation {
@@ -44,9 +43,9 @@ impl Simulation {
 
         // Allocate these veectors now with the correct capacity so they dont keep reallocating as they grow.
         // They are + 1 because the population starts with these all having one value in them already
-        let mut best_chromosome: Vec<Chromosome> = Vec::with_capacity(NUMBER_OF_GENERATIONS + 1);
-        let mut worst_chromosome: Vec<Chromosome> = Vec::with_capacity(NUMBER_OF_GENERATIONS + 1);
-        let mut average_cost: Vec<f64> = Vec::with_capacity(NUMBER_OF_GENERATIONS + 1);
+        let mut best_chromosome: Vec<Chromosome> = Vec::with_capacity(crate::NUMBER_OF_GENERATIONS + 1);
+        let mut worst_chromosome: Vec<Chromosome> = Vec::with_capacity(crate::NUMBER_OF_GENERATIONS + 1);
+        let mut average_cost: Vec<f64> = Vec::with_capacity(crate::NUMBER_OF_GENERATIONS + 1);
 
         best_chromosome.push(new_population.best_chromosome.clone());
         worst_chromosome.push(new_population.worst_chromosome.clone());
@@ -59,7 +58,7 @@ impl Simulation {
             mutation_operator, 
             population_size,
             tournament_size, 
-            generations: NUMBER_OF_GENERATIONS as u32,
+            generations: crate::NUMBER_OF_GENERATIONS as u32,
             best_chromosome,
             worst_chromosome,
             average_cost,
@@ -67,17 +66,10 @@ impl Simulation {
     }
 
     /// This function will run the simulation
-    pub fn run(&mut self) {
+    pub fn run(&mut self, progress_bar: ProgressBar) {
 
         // Create counter variable
         let mut i: u32 = 1;
-
-        let pb = ProgressBar::new(NUMBER_OF_GENERATIONS as u64);
-
-        pb.set_style(ProgressStyle::with_template("[{elapsed_precise}] [{wide_bar:.cyan/blue}] [{percent}%] ({eta}) {msg}")
-        .unwrap()
-        .with_key("eta", |state: &ProgressState, w: &mut dyn Write| write!(w, "{:.1}s", state.eta().as_secs_f64()).unwrap())
-        .progress_chars("#>-"));
 
         // Loop through this for as many generations as required
         while i < self.generations {
@@ -91,11 +83,13 @@ impl Simulation {
 
             // Increment the counter variable
             i += 1;
-            pb.set_message(format!("Generation {}", i));
-            pb.set_position(i as u64);
+
+            // Change the message displayed to show the current generation
+            progress_bar.set_message(format!("Generation {}", i));
+            // Set the position of the progress bar to the current generation
+            progress_bar.set_position(i as u64);
         }
 
-        pb.finish_with_message(format!("{} Done", self.country_data.name));
-
+        progress_bar.finish_with_message(format!("{} Done", self.country_data.name));
     }
 }
