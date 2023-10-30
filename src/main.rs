@@ -11,6 +11,7 @@ use plotters::prelude::*;
 
 use indicatif::{MultiProgress, ProgressBar, ProgressState, ProgressStyle};
 use std::fmt::Write;
+use std::thread;
 
 /// This is hardcoded for the course requirement
 const NUMBER_OF_GENERATIONS: usize = 10000;
@@ -88,22 +89,32 @@ fn main() {
         .progress_chars("#>-");
 
     let brazil_bar = multi_bar.add(ProgressBar::new(NUMBER_OF_GENERATIONS as u64));
-    let burma_bar = multi_bar.add(ProgressBar::new(NUMBER_OF_GENERATIONS as u64));
-
     brazil_bar.set_style(bar_style.clone());
+    
+    let burma_bar = multi_bar.add(ProgressBar::new(NUMBER_OF_GENERATIONS as u64));
     burma_bar.set_style(bar_style);
 
-    let burma = Country::new(false);
-    let brazil = Country::new(true);
 
-    let mut brazil_simulation = Simulation::new(brazil, cli.crossover_operator, cli.mutation_operator, cli.population_size, cli.tournament_size);
-    let mut burma_simulation = Simulation::new(burma, cli.crossover_operator, cli.mutation_operator, cli.population_size, cli.tournament_size);
-    brazil_simulation.run(brazil_bar);
-    burma_simulation.run(burma_bar);
+    let first_thread = thread::spawn(move || {
+        let brazil = Country::new(true);
+        let mut brazil_simulation = Simulation::new(brazil, cli.crossover_operator, cli.mutation_operator, cli.population_size, cli.tournament_size);
+        brazil_simulation.run(brazil_bar);
+        brazil_simulation
+    });
 
-    plot(brazil_simulation.best_chromosome, burma_simulation.best_chromosome).unwrap();
+    let second_thread = thread::spawn(move || {
+        let burma = Country::new(false);
+        let mut burma_simulation = Simulation::new(burma, cli.crossover_operator, cli.mutation_operator, cli.population_size, cli.tournament_size);
+        burma_simulation.run(burma_bar);
+        burma_simulation
+    });
+    
+    let finished_brazil = first_thread.join().unwrap();
+    let finished_burma = second_thread.join().unwrap();
 
-    println!("The best Chromosome in Brazil {:?}", brazil_simulation.population.best_chromosome.cost);
-    println!("The best Chromosome in Burma {:?}", burma_simulation.population.best_chromosome.cost);
+    plot(finished_brazil.best_chromosome, finished_burma.best_chromosome).unwrap();
+
+    println!("The best Chromosome in Brazil {:?}", finished_brazil.population.best_chromosome.cost);
+    println!("The best Chromosome in Burma {:?}", finished_burma.population.best_chromosome.cost);
 
 }
