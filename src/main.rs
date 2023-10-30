@@ -1,6 +1,7 @@
 // Here I am importing my program
 use tsp_coursework::country::*;
 use tsp_coursework::simulation::*;
+use tsp_coursework::chromosome::Chromosome;
 
 // Here I am importing my external dependancies
 // Clap is used to make the command line interface
@@ -31,7 +32,53 @@ struct Cli {
     tournament_size: u32,
 }
 
-fn main() -> Result<(), Box<dyn std::error::Error>> {
+
+
+fn plot(brazil_data: Vec<Chromosome>, burma_data: Vec<Chromosome>) -> Result<(), Box<dyn std::error::Error>> {
+    // Create a drawing area with a specified size and coordinate range
+    let root = BitMapBackend::new("results/chart.png", (1920, 1080)).into_drawing_area();
+    root.fill(&WHITE)?;
+    
+    let mut chart = ChartBuilder::on(&root)
+        .caption("WOOOOO CHART", ("sans-serif", 50).into_font())
+        .margin(10)
+        .x_label_area_size(30)
+        .y_label_area_size(30)
+        .build_cartesian_2d(0f32..10000f32, 0f32..100000f32)?;
+
+    chart
+        .configure_mesh()
+        .x_labels(5)
+        .y_labels(5)
+        .draw()?;
+
+    let brazil_coords = brazil_data
+        .iter()
+        .enumerate()
+        .map(|(x, y)| (x as f32, y.cost as f32))
+        .collect::<Vec<(f32, f32)>>();
+
+    chart.draw_series(LineSeries::new(
+        brazil_coords,
+        &RED,
+    ))?;
+
+    let burma_coords = burma_data
+        .iter()
+        .enumerate()
+        .map(|(x, y)| (x as f32, y.cost as f32))
+        .collect::<Vec<(f32, f32)>>();
+
+    chart.draw_series(LineSeries::new(
+        burma_coords,
+        &BLUE,
+    ))?;
+
+    root.present()?;
+    Ok(())
+}
+
+fn main() {
     let cli = Cli::parse();
 
     let multi_bar = MultiProgress::new();
@@ -54,42 +101,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     brazil_simulation.run(brazil_bar);
     burma_simulation.run(burma_bar);
 
-
-    // Create a drawing area with a specified size and coordinate range
-    let root = BitMapBackend::new("chart.png", (1920, 1080)).into_drawing_area();
-    root.fill(&WHITE)?;
-
-    let mut chart = ChartBuilder::on(&root)
-        .caption("WOOOOO CHART", ("sans-serif", 50).into_font())
-        .margin(10)
-        .x_label_area_size(30)
-        .y_label_area_size(30)
-        .build_cartesian_2d(0f32..10000f32, 0f32..100000f32)?;
-
-    chart
-        .configure_mesh()
-                // We can customize the maximum number of labels allowed for each axis
-        .x_labels(5)
-        .y_labels(5)
-        .draw()?;
-
-    // And we can draw something in the drawing area
-
-    let coords = brazil_simulation.best_chromosome
-            .iter()
-            .enumerate()
-            .map(|(x, y)| (x as f32, y.cost as f32))
-            .collect::<Vec<(f32, f32)>>();
-
-    chart.draw_series(LineSeries::new(
-        coords,
-        &RED,
-    ))?;
-
-    root.present()?;
+    plot(brazil_simulation.best_chromosome, burma_simulation.best_chromosome).unwrap();
 
     println!("The best Chromosome in Brazil {:?}", brazil_simulation.population.best_chromosome.cost);
-    println!("The worst Chromosome in Burma {:?}", burma_simulation.population.worst_chromosome.cost);
+    println!("The best Chromosome in Burma {:?}", burma_simulation.population.best_chromosome.cost);
 
-    Ok(())
 }
