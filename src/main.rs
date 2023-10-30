@@ -3,7 +3,10 @@ use tsp_coursework::country::*;
 use tsp_coursework::simulation::*;
 
 // Here I am importing my external dependancies
+// Clap is used to make the command line interface
 use clap::Parser;
+// Plotters is used to create plots of the data
+use plotters::prelude::*;
 
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
@@ -22,15 +25,51 @@ struct Cli {
     tournament_size: u32,
 }
 
-fn main() {
+fn main() -> Result<(), Box<dyn std::error::Error>> {
     let cli = Cli::parse();
 
     let burma = Country::new(false);
     let brazil = Country::new(true);
 
-    let burma_simulation = Simulation::new(burma.graph, cli.crossover_operator, cli.mutation_operator, cli.population_size, cli.tournament_size);
+    let mut brazil_simulation = Simulation::new(brazil, cli.crossover_operator, cli.mutation_operator, cli.population_size, cli.tournament_size);
+    brazil_simulation.run();
+    
 
-    println!("The best Chromosome after 10,000 Generations is {:?}", burma_simulation.population.best_chromosome);
+    // Create a drawing area with a specified size and coordinate range
+    let root = BitMapBackend::new("chart.png", (1920, 1080)).into_drawing_area();
+    root.fill(&WHITE)?;
 
+    let mut chart = ChartBuilder::on(&root)
+        .caption("WOOOOO CHART", ("sans-serif", 50).into_font())
+        .margin(10)
+        .x_label_area_size(30)
+        .y_label_area_size(30)
+        .build_cartesian_2d(0f32..10000f32, 0f32..100000f32)?;
 
+    chart
+        .configure_mesh()
+                // We can customize the maximum number of labels allowed for each axis
+        .x_labels(5)
+        .y_labels(5)
+        .draw()?;
+
+    // And we can draw something in the drawing area
+
+    let coords = brazil_simulation.best_chromosome
+            .iter()
+            .enumerate()
+            .map(|(x, y)| (x as f32, y.cost as f32))
+            .collect::<Vec<(f32, f32)>>();
+
+    chart.draw_series(LineSeries::new(
+        coords,
+        &RED,
+    ))?;
+
+    root.present()?;
+
+    println!("The best Chromosome after 10,000 Generations is {:?}", brazil_simulation.population.best_chromosome.cost);
+    println!("The worst Chromosome after 10,000 Generations is {:?}", brazil_simulation.population.worst_chromosome.cost);
+
+    Ok(())
 }

@@ -90,27 +90,24 @@ impl Population {
     }
 
     /// A Function to implement the Replace Weakest algorithm
-    fn replacement(&mut self, child: Chromosome) {
+    pub fn replacement(&mut self, child: Chromosome) {
+
         // Iterate over the population_data and find the index of the most expensive chromosome
-        let index = self.population_data
+        let worst_chromosome: (usize, Chromosome) = self.population_data
                                     .iter()
                                     .enumerate()
                                     // find most expensive chromosome
-                                    .max_by(|(_,x), (_,y)| (*x).partial_cmp(y).unwrap())
+                                    .max_by(|(_,x), (_,y)| x.partial_cmp(y).unwrap())
+                                    .map(|(i, x)| (i, x.to_owned()))
                                     // strip chromosome from iter, leaving only index
-                                    .map(|(a,_)| a)
                                     .unwrap();
 
         
-        // Get the most expensive chromosome from the population
-        if let Some(worst_chromosome) = self.population_data.get_mut(index) {
+        // Check that the cost of the worse chromosome is actually greater than the cost of the child
+        if worst_chromosome.1.cost >= child.cost {
 
-            // Check that the cost of the worse chromosome is actually greater than the cost of the child
-            if worst_chromosome.cost >= child.cost  {
-
-                // Replace the worst chromosome with the child
-                *worst_chromosome = child
-            }
+            // Replace the worst chromosome with the child
+            let _ = std::mem::replace( &mut self.population_data[worst_chromosome.0], child);
         }
     }
 
@@ -150,5 +147,93 @@ impl Population {
         self.replacement(first_child);
         // Re-run replacement function with second child
         self.replacement(second_child);
+
+        // Update old population stats with new ones
+        let _ = std::mem::replace(&mut self.average_population_cost, Population::find_average_cost(&self.population_data));
+        let _ = std::mem::replace(&mut self.best_chromosome, Population::find_best_chromosome(&self.population_data));
+        let _ = std::mem::replace(&mut self.worst_chromosome, Population::find_worst_chromosome(&self.population_data));
+    }
+}
+
+
+#[cfg(test)]
+mod test {
+    use super::Population;
+    use crate::country::Country;
+
+    const SRC: &str = r#"<travellingSalesmanProblemInstance>
+    <name>burma14</name>
+    <source>TSPLIB</source>
+    <description>14-Staedte in Burma (Zaw Win)</description>
+    <doublePrecision>15</doublePrecision>
+    <ignoredDigits>5</ignoredDigits>
+    <graph>
+      <vertex>
+        <edge cost="1.530000000000000e+02">1</edge>
+        <edge cost="5.100000000000000e+02">2</edge>
+        <edge cost="7.060000000000000e+02">3</edge>
+      </vertex>
+      <vertex>
+        <edge cost="1.530000000000000e+02">0</edge>
+        <edge cost="4.220000000000000e+02">2</edge>
+        <edge cost="6.640000000000000e+02">3</edge>
+      </vertex>
+      <vertex>
+        <edge cost="5.100000000000000e+02">0</edge>
+        <edge cost="4.220000000000000e+02">1</edge>
+        <edge cost="2.890000000000000e+02">3</edge>
+      </vertex>
+      <vertex>
+        <edge cost="7.060000000000000e+02">0</edge>
+        <edge cost="6.640000000000000e+02">1</edge>
+        <edge cost="2.890000000000000e+02">2</edge>
+      </vertex>
+    </graph>
+    </travellingSalesmanProblemInstance>"#;
+
+    #[test]
+    fn test_manual() {
+        let burma_small: Country = serde_xml_rs::from_str(SRC).unwrap();
+
+        let mut test_pop = Population::new(10, &burma_small.graph);
+
+        println!("This is the test pop before: {:?}", test_pop.population_data);
+        println!("This is the test pop average before: {:?}", test_pop.average_population_cost);
+
+        let parent_1 = test_pop.run_tournament(5);
+        
+        let parent_2 = test_pop.run_tournament(5);
+
+        println!("parents selected are {:?} and {:?}", parent_1, parent_2);
+        
+        let (mut first_child, mut second_child) = parent_1.crossover(&parent_2, 0, &burma_small.graph);
+
+        println!("children selected are {:?} and {:?}", first_child, second_child);
+
+        first_child.mutation(1, &burma_small.graph);
+        second_child.mutation(1, &burma_small.graph);
+
+        println!("children mutated are {:?} and {:?}", first_child, second_child);
+
+        test_pop.replacement(first_child);
+
+        test_pop.replacement(second_child);
+
+        println!("This is the test pop after: {:?}", test_pop.population_data);
+        println!("This is the test pop average after: {:?}", test_pop.average_population_cost);
+    }
+
+    #[test]
+    fn test_auto() {
+
+        let burma_small: Country = serde_xml_rs::from_str(SRC).unwrap();
+
+        let mut test_pop = Population::new(10, &burma_small.graph);
+
+        println!("This is the test pop average before: {:?}", test_pop.average_population_cost);
+
+        test_pop.selection_and_replacement(5, 0, 1, &burma_small.graph);
+
+        println!("This is the test pop average after: {:?}", test_pop.average_population_cost);
     }
 }

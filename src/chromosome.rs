@@ -22,8 +22,8 @@ impl PartialEq for Chromosome {
     }
 }
 
-/// Implements [`PartialOrd`] for Chromosome so that two chromosomes can be correctly compared on cost
-/// Rust will not implement Ordering for floats, therefore I have to cast them to intergers for the comparison
+/// Implements [`PartialOrd`] for Chromosome so that two chromosomes can be correctly compared on cost.
+/// Rust will not implement Ordering for floats, therefore I have to cast them to intergers for the comparison.
 /// All costs in the XML file were given in scientific notation but fortunatly all expand out to intergers so this is possible
 impl PartialOrd for Chromosome {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
@@ -150,8 +150,6 @@ impl Chromosome {
                 // Select crossover point, if 1 all but first gene is swapped, if self.route.len() - 1 last gene is swapped
                 let crossover_point: usize = thread_rng().gen_range(1..self.route.len());
 
-                println!("crossover point: {}", crossover_point);
-
                 // Here we split the parent vector into two slices and assign whats left of the midpoint to _parent_prefix and whats right (inclusive) to _crossover
                 let (first_parent_prefix, first_parent_suffix) = first_parent.split_at(crossover_point);
                 let (second_parent_prefix, second_parent_suffix) = second_parent.split_at(crossover_point);
@@ -203,7 +201,7 @@ impl Chromosome {
                         }
                     }
                 }
-            } else if i < route.len() {
+            } else {
 
                 // Loop through each city in the country
                 for (index, vert) in graph.vertex.iter().enumerate() {

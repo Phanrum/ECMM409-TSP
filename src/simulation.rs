@@ -1,7 +1,10 @@
 //! This module defines the structure [`Simulation`] and methods for the Simulation of the [`Population`].
 
+use indicatif::{ProgressBar, ProgressState, ProgressStyle};
+use std::fmt::Write;
+
 use crate::chromosome::Chromosome;
-use crate::country::Graph;
+use crate::country::Country;
 use crate::population::Population;
 
 /// This is hardcoded for the course requirement
@@ -10,7 +13,7 @@ const NUMBER_OF_GENERATIONS: usize = 10000;
 /// The `Simulation` type, which contains all the information needed to run the simultation 
 pub struct Simulation {
     /// Data for the country
-    pub country_data: Graph,
+    pub country_data: Country,
     /// The actual population of chromosomes for the simulation
     pub population: Population,
     /// Crossover operator: 0 = crossover with fix, 1 = ordered crossover.
@@ -35,9 +38,9 @@ pub struct Simulation {
 impl Simulation {
 
     /// This function creates a new [`Simulation`] with a random [`Population`]
-    pub fn new(country_data: Graph, crossover_operator: u8, mutation_operator: u8, population_size: u64, tournament_size: u32) -> Self {
+    pub fn new(country_data: Country, crossover_operator: u8, mutation_operator: u8, population_size: u64, tournament_size: u32) -> Self {
 
-        let new_population = Population::new(population_size, &country_data);
+        let new_population = Population::new(population_size, &country_data.graph);
 
         // Allocate these veectors now with the correct capacity so they dont keep reallocating as they grow.
         // They are + 1 because the population starts with these all having one value in them already
@@ -51,13 +54,7 @@ impl Simulation {
 
         Simulation { 
             country_data, 
-            population: Population { 
-                population_size, 
-                population_data: new_population.population_data, 
-                average_population_cost: new_population.average_population_cost,
-                best_chromosome: new_population.best_chromosome.clone(),
-                worst_chromosome: new_population.worst_chromosome.clone(),
-            },
+            population: new_population,
             crossover_operator, 
             mutation_operator, 
             population_size,
@@ -73,13 +70,19 @@ impl Simulation {
     pub fn run(&mut self) {
 
         // Create counter variable
-        let mut i: u32 = 0;
+        let mut i: u32 = 1;
+
+        let pb = ProgressBar::new(NUMBER_OF_GENERATIONS as u64);
+
+        pb.set_style(ProgressStyle::with_template("[{elapsed_precise}] [{wide_bar:.cyan/blue}] [{percent}%] ({eta}) {msg}")
+        .unwrap()
+        .with_key("eta", |state: &ProgressState, w: &mut dyn Write| write!(w, "{:.1}s", state.eta().as_secs_f64()).unwrap())
+        .progress_chars("#>-"));
 
         // Loop through this for as many generations as required
         while i < self.generations {
-            
             // Update the population with new children generated from crossover
-            self.population.selection_and_replacement(self.tournament_size, self.crossover_operator, self.mutation_operator, &self.country_data);
+            self.population.selection_and_replacement(self.tournament_size, self.crossover_operator, self.mutation_operator, &self.country_data.graph);
 
             // Update all the stats
             self.best_chromosome.push(self.population.best_chromosome.clone());
@@ -88,7 +91,11 @@ impl Simulation {
 
             // Increment the counter variable
             i += 1;
+            pb.set_message(format!("Generation {}", i));
+            pb.set_position(i as u64);
         }
+
+        pb.finish_with_message(format!("{} Done", self.country_data.name));
 
     }
 }
