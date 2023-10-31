@@ -1,10 +1,10 @@
-//! This module creates the structure [`Country`] and methods to import data from 
-//! an XML file and deserialize into [`Country`] so that it can be used.
+//! This module creates the structure [`Country`] and methods to import data from
+//! an XML file and deserialize into a [`Country`] so that it can be used.
 
-use std::fs;
+use core::slice;
 use serde::Deserialize;
 use serde_xml_rs;
-use core::slice;
+use std::fs;
 
 /// This struct defines the datatype of an Edge, which is the cost to get to a city as a float
 #[derive(Debug, Deserialize)]
@@ -58,14 +58,14 @@ impl Country {
     pub fn new(country: bool) -> Self {
         match country {
             true => {
-                // Imports the XML file as a String 
+                // Imports the XML file as a String
                 let src = fs::read_to_string("data/brazil58.xml").unwrap();
                 // Convert String to &str and use serde_xml_rs to deserialize into my struct Country
                 serde_xml_rs::from_str(src.as_str()).unwrap()
             }
 
             false => {
-                // Imports the XML file as a String 
+                // Imports the XML file as a String
                 let src = fs::read_to_string("data/burma14.xml").unwrap();
                 // Convert String to &str and use serde_xml_rs to deserialize into my struct Country
                 serde_xml_rs::from_str(src.as_str()).unwrap()

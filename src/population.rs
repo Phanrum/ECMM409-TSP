@@ -60,32 +60,32 @@ impl Population {
     }
 
     /// A Function to find and return the average cost of a population given a vector of that populations chromosomes
-    pub fn find_average_cost(population_data: &Vec<Chromosome>) -> f64 {
+    pub fn find_average_cost(population_data: &[Chromosome]) -> f64 {
         // Create mutable variable
         let mut average_cost: f64 = 0.0;
 
         // Iterate through the population, adding the cost of each chromosome divided by the number of chromosomes to average_cost
-        population_data.iter().for_each(|x| average_cost += (*x).cost / population_data.len() as f64);
+        population_data.iter().for_each(|x| average_cost += x.cost / population_data.len() as f64);
 
         // Return average_cost
         average_cost
     }
 
     /// A function to find the worst Chromosome in the population
-    pub fn find_worst_chromosome(population_data: &Vec<Chromosome>) -> Chromosome {
+    pub fn find_worst_chromosome(population_data: &[Chromosome]) -> Chromosome {
         let worst = population_data
-                .iter()
-                .max_by(|x, y| x.partial_cmp(y).unwrap())
-                .unwrap();
+            .iter()
+            .max_by(|x, y| x.partial_cmp(y).unwrap())
+            .unwrap();
         worst.to_owned()
     }
 
     /// A function to find the best Cromosome in the population
-    pub fn find_best_chromosome(population_data: &Vec<Chromosome>) -> Chromosome {
+    pub fn find_best_chromosome(population_data: &[Chromosome]) -> Chromosome {
         let best = population_data
-                .iter()
-                .min_by(|x, y| x.partial_cmp(y).unwrap())
-                .unwrap();
+            .iter()
+            .min_by(|x, y| x.partial_cmp(y).unwrap())
+            .unwrap();
         best.to_owned()
     }
 
@@ -94,13 +94,13 @@ impl Population {
 
         // Iterate over the population_data and find the index of the most expensive chromosome
         let worst_chromosome: (usize, Chromosome) = self.population_data
-                                    .iter()
-                                    .enumerate()
-                                    // find most expensive chromosome
-                                    .max_by(|(_,x), (_,y)| x.partial_cmp(y).unwrap())
-                                    .map(|(i, x)| (i, x.to_owned()))
-                                    // strip chromosome from iter, leaving only index
-                                    .unwrap();
+            .iter()
+            .enumerate()
+            // find most expensive chromosome
+            .max_by(|(_,x), (_,y)| x.partial_cmp(y).unwrap())
+            .map(|(i, x)| (i, x.to_owned()))
+            // strip chromosome from iter, leaving only index
+            .unwrap();
 
         
         // Check that the cost of the worse chromosome is actually greater than the cost of the child
@@ -116,9 +116,9 @@ impl Population {
     fn run_tournament(&self, tournament_size: u32) -> Chromosome {
         // Create a Tournament population by randomly selecting "Tournament_size" number of chromosomes from the population
         let mut tournament_population: Vec<Chromosome> = self.population_data
-                                                                .choose_multiple(&mut thread_rng(), tournament_size as usize)
-                                                                .cloned()
-                                                                .collect();
+            .choose_multiple(&mut thread_rng(), tournament_size as usize)
+            .cloned()
+            .collect();
 
         // Sort our tournament_population (using the custom implementation of PartialOrd) by cost - this restults in lowest cost first
         tournament_population.sort_by(|x, y| x.partial_cmp(y).unwrap());
