@@ -84,10 +84,35 @@ impl Chromosome {
                 // Swap the first gene with the second gene
                 self.route.swap(first_gene, second_gene);
                 // Update the cost of the Chromosome
-                self.cost = Chromosome::fitness(&self.route, graph)
+                let _ = std::mem::replace(&mut self.cost, Chromosome::fitness(&self.route, graph));
             }
             // Multiple Swap
-            2 => todo!(),
+            2 => {
+                let first_gene: usize = thread_rng().gen_range(0..self.route.len());
+                let mut second_gene: usize = thread_rng().gen_range(0..self.route.len());
+
+                // If the second gene is the same as the first, regenerate it
+                while second_gene == first_gene {
+                    second_gene = thread_rng().gen_range(0..self.route.len());
+                }
+
+                let third_gene: usize = thread_rng().gen_range(0..self.route.len());
+                let mut fourth_gene: usize = thread_rng().gen_range(0..self.route.len());
+
+                // If the second gene is the same as the first, regenerate it
+                while fourth_gene == third_gene {
+                    fourth_gene = thread_rng().gen_range(0..self.route.len());
+                }
+
+                // Swap the first gene with the second gene
+                self.route.swap(first_gene, second_gene);
+                // Swap the third gene with the fourth gene
+                self.route.swap(third_gene, fourth_gene);
+
+                // Update the cost of the Chromosome
+                let _ = std::mem::replace(&mut self.cost, Chromosome::fitness(&self.route, graph));
+            },
+            
             // No other options are possible as Clap's Value Parser will reject them
             _ => unreachable!(),
         }
@@ -178,7 +203,7 @@ impl Chromosome {
     }
 
     /// Function to calculate the cost of a [`Chromosome`]
-    pub fn fitness(route: &Vec<u32>, graph: &Graph) -> f64 {
+    pub fn fitness(route: &[u32], graph: &Graph) -> f64 {
         let mut cost: f64 = 0.0;
 
         // Loop over all elements in chromosome
