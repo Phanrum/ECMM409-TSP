@@ -3,12 +3,10 @@
 //! [pop]: crate::population::Population
 
 use crate::country::Graph;
-use rand::seq::SliceRandom;
-use rand::{thread_rng, Rng};
+use rand::{thread_rng, Rng, seq::{SliceRandom, index}};
 use std::cmp::Ordering;
-use std::iter::zip;
 
-/// This defines the chromosome in the population, it has a vector "route" which contains the city numbers in the order they're visited
+/// This defines a chromosome in the population, it has a vector "route" which contains the city numbers in the order they're visited
 #[derive(Clone, Debug)]
 pub struct Chromosome {
     pub route: Vec<u32>,
@@ -39,7 +37,7 @@ impl Chromosome {
     /// use [`generation`]
     /// 
     /// [`generation`]: Chromosome::generation
-    pub fn new (route: Vec<u32>, cost: f64) -> Self {
+    pub fn new(route: Vec<u32>, cost: f64) -> Self {
         Self { route, cost }
     }
 
@@ -49,7 +47,7 @@ impl Chromosome {
         // The route is the order the city appears in the vector whilst the number of the city relates to its index in the Graph struct
 
         // Calculated the number of cities from the length of the vertex matrix
-        let num_cities = graph.vertex.len();
+        let num_cities: usize = graph.vertex.len();
 
         // Create a vector the length of the number of the cities, initialised as a range from 0 to num_cities -1, i.e 0,1,2,3.....
         let mut vec: Vec<u32> = (0..num_cities as u32).collect();
@@ -65,11 +63,67 @@ impl Chromosome {
         }
     }
 
+    /// Function to use inversion mutation on a [`Chromosome`]
+    fn inversion(&mut self, first_index: usize, second_index: usize) {
+        // Create an empty vector with preallocated capacity to improve performace
+        let mut new_route: Vec<u32> = Vec::with_capacity(self.route.len());
+
+        // Split the old route into a slice containing all genes before first_index and a slice containing the rest
+        let (first_slice, remainder) = self.route.as_slice().split_at(first_index);
+
+        // Split the remainder into a slice containing all 
+        let (centre, second_slice) = remainder.split_at(second_index - first_slice.len());
+
+        // Use .concat() method to flatten two slices together.
+        let mut subslice: Vec<u32> = [second_slice, first_slice].concat();
+
+        // Invert the slice
+        subslice.reverse();
+
+        // Rebuild the route, using extend_from_slice to append genes in order
+        new_route.extend_from_slice(&subslice[0..first_slice.len()]);
+        new_route.extend_from_slice(centre);
+        new_route.extend_from_slice(&subslice[first_slice.len()..]);
+
+        // Replace the old route with the new one
+        let _ = std::mem::replace(&mut self.route, new_route);
+    }
+
     /// Function to mutate a [`Chromosome`]s genes using multiple different methods
     pub fn mutation(&mut self, mutation_operator: u8, graph: &Graph) {
         match mutation_operator {
             // Inversion
-            0 => todo!(),
+            0 => {
+                // Select which  to swap randomly
+                let first_index: usize = thread_rng().gen_range(1..=self.route.len());
+                let mut second_index: usize = thread_rng().gen_range(1..=self.route.len());
+                
+                // If the second index is the same as the first, regenerate it
+                while second_index == first_index {
+                    second_index = thread_rng().gen_range(0..self.route.len());
+                }
+
+                match first_index.cmp(&second_index) {
+                    // If the first index is lower, use that to create the first slice
+                    Ordering::Less => {
+                        // Run inversion on chromosome
+                        Chromosome::inversion(self, first_index, second_index);
+                    
+                        // Update the cost of the Chromosome
+                        let _ = std::mem::replace(&mut self.cost, Chromosome::fitness(&self.route, graph));
+                    },
+                    // If the second index is lower, use that to create the first slice
+                    Ordering::Greater => {
+                        // Run inversion on chromosome
+                        Chromosome::inversion(self, second_index, first_index);
+
+                        // Update the cost of the Chromosome
+                        let _ = std::mem::replace(&mut self.cost, Chromosome::fitness(&self.route, graph));
+                    },
+                    // Unreachable due to while loop above
+                    Ordering::Equal => unreachable!()
+                }
+            },
             // Single Swap
             1 => {
                 // Select which genes to swap randomly
@@ -83,44 +137,30 @@ impl Chromosome {
 
                 // Swap the first gene with the second gene
                 self.route.swap(first_gene, second_gene);
-                // Update the cost of the Chromosome
-                let _ = std::mem::replace(&mut self.cost, Chromosome::fitness(&self.route, graph));
-            }
-            // Multiple Swap
-            2 => {
-                let first_gene: usize = thread_rng().gen_range(0..self.route.len());
-                let mut second_gene: usize = thread_rng().gen_range(0..self.route.len());
-
-                // If the second gene is the same as the first, regenerate it
-                while second_gene == first_gene {
-                    second_gene = thread_rng().gen_range(0..self.route.len());
-                }
-
-                let third_gene: usize = thread_rng().gen_range(0..self.route.len());
-                let mut fourth_gene: usize = thread_rng().gen_range(0..self.route.len());
-
-                // If the second gene is the same as the first, regenerate it
-                while fourth_gene == third_gene {
-                    fourth_gene = thread_rng().gen_range(0..self.route.len());
-                }
-
-                // Swap the first gene with the second gene
-                self.route.swap(first_gene, second_gene);
-                // Swap the third gene with the fourth gene
-                self.route.swap(third_gene, fourth_gene);
 
                 // Update the cost of the Chromosome
                 let _ = std::mem::replace(&mut self.cost, Chromosome::fitness(&self.route, graph));
             },
-            
+            // Multiple Swap
+            2 => {
+                // Randomly sample 4 distinct indices from 0..self.route.len(), and return them in random order (fully shuffled).
+                let results = index::sample(&mut thread_rng(), self.route.len(), 4).into_vec();
+
+                // Swap the first gene with the second gene
+                self.route.swap(results[0], results[1]);
+                // Swap the third gene with the fourth gene
+                self.route.swap(results[2], results[3]);
+
+                // Update the cost of the Chromosome
+                let _ = std::mem::replace(&mut self.cost, Chromosome::fitness(&self.route, graph));
+            },
             // No other options are possible as Clap's Value Parser will reject them
-            _ => unreachable!(),
+            _ => unreachable!()
         }
     }
 
     /// Function to fix a crossover, taking the child and slices from both parents
     fn fix_crossover(child: &mut Vec<u32>, crossover_point: usize) {
- 
         // Create a list containing every gene
         let master_list: Vec<u32> = (0..child.len() as u32).collect();
 
@@ -152,7 +192,7 @@ impl Chromosome {
             }
         
             // Zips each element from duplicate_index with its counterpart in missing_gene into an iterator of tuples
-            let replacement = zip(duplicate_index, missing_gene);
+            let replacement = std::iter::zip(duplicate_index, missing_gene);
     
             // Loop through replacement
             for (index, gene) in replacement {
@@ -162,15 +202,86 @@ impl Chromosome {
         }
     }
 
+    /// Function to return the ordered crossover of two parents given the indicies to take the crossover slices 
+    /// 
+    /// An ordered crossover is taking two slices from the parent and keeping those genes the same in the child,
+    /// but then reordering the genes outside those slices into the order they appear in the second parent
+    fn ordered_crossover(first_parent: &&[u32], second_parent: &&[u32], crossover_points: &[usize]) -> Vec<u32> {
+        // Define first and second slice using the crossover points
+        let first_slice: &[u32] = first_parent
+            .get(crossover_points[0]..=crossover_points[1])
+            .unwrap();
+        let second_slice: &[u32] = first_parent
+            .get(crossover_points[2]..=crossover_points[3])
+            .unwrap();
+
+        // Set each value to maximum of u32 for pattern matching
+        let mut child: Vec<u32> = vec![u32::MAX; first_parent.len()];
+
+        // Loop through the first slice and add its values to the child at the correct index
+        for (index, value) in first_slice.iter().enumerate() {
+            child[index + crossover_points[0]] = *value
+        }
+
+        // Loop through the second slice and add its values to the child at the correct index
+        for (index, value) in second_slice.iter().enumerate() {
+            child[index + crossover_points[2]] = *value
+        }
+
+        // Create a vector of all the elements in first parent that are not in first_slice or second_slice
+        let remainder = first_parent
+            .iter()
+            .filter(|x| !first_slice.contains(x) && !second_slice.contains(x))
+            .copied()
+            .collect::<Vec<u32>>();
+
+        // Create a vector to hold the order the remainder elements shoukd be added back with
+        let mut replacement: Vec<(usize, u32)> = Vec::with_capacity(remainder.len());
+
+        // For each missing value in remainder, find it index in second parent and add that to relacement
+        for value in remainder {
+            replacement.push(
+                second_parent
+                    .iter()
+                    .copied()
+                    .enumerate()
+                    .filter(|(_, x)| x.eq(&value))
+                    .last()
+                    .unwrap()
+            );
+        }
+
+        // Sort this vector by its indicies
+        replacement.sort_by(|(i, _), (j, _)| i.partial_cmp(j).unwrap());
+
+        // Loop over each gene in replacement
+        for (_, x) in replacement.iter() {
+
+            // Ensure gene has not already been added
+            if !child.contains(x) {
+
+                // Find first position in child with an unassigned gene (unassigned when the value is u32::MAX)
+                let index: usize = child.iter().position(|y| *y == u32::MAX).unwrap();
+
+                // Replace the unassigned gene in child with the new gene
+                let _ = std::mem::replace(&mut child[index], *x);
+            }
+        }
+        child
+    }
 
     /// Function to perform crossover on two [`Chromosome`]s and return the children
+    /// 
+    /// A crossover_operator of 0 results in a Crossover with fix
+    /// A crossover_operator of 1 results in a Ordered Crossover
+    /// NOTE: If the Chromosome is of length u32::MAX (4294967295) then this operation will have undefined behaviour
     pub fn crossover(&self, other: &Chromosome, crossover_operator: u8, graph: &Graph) -> (Chromosome, Chromosome) {
         match crossover_operator {
             // Crossover with Fix
             0 => {
-                // define fist parent as Chromosome this function is cast on and second parent as Chromosome passed into function
-                let first_parent = &self.route;
-                let second_parent = &other.route;
+                // Define the fist parent as Chromosome this function is cast on and the second parent as Chromosome passed into function
+                let first_parent: &&[u32] = &self.route.as_slice();
+                let second_parent: &&[u32] = &other.route.as_slice();
 
                 // Select crossover point, if 1 all but first gene is swapped, if self.route.len() - 1 last gene is swapped
                 let crossover_point: usize = thread_rng().gen_range(1..self.route.len());
@@ -180,23 +291,58 @@ impl Chromosome {
                 let (second_parent_prefix, second_parent_suffix) = second_parent.split_at(crossover_point);
                 
                 // Use .concat() method to flatten slice. _parent is on the left side and _crossover is onthe right side to preserve order
-                let mut first_child = [first_parent_prefix, second_parent_suffix].concat();
-                let mut second_child = [second_parent_prefix, first_parent_suffix].concat();
+                let mut first_child: Vec<u32> = [first_parent_prefix, second_parent_suffix].concat();
+                let mut second_child: Vec<u32> = [second_parent_prefix, first_parent_suffix].concat();
 
                 // Use previously defined fix_crossover function to fix the crossover should any genes be repeated in the child
                 Chromosome::fix_crossover(&mut first_child, crossover_point);
                 Chromosome::fix_crossover(&mut second_child, crossover_point);
 
                 // Calculate fitness of the children
-                let first_child_fitness = Chromosome::fitness(&first_child, graph);
-                let second_child_fitness = Chromosome::fitness(&second_child, graph);
+                let first_child_fitness: f64 = Chromosome::fitness(&first_child, graph);
+                let second_child_fitness: f64 = Chromosome::fitness(&second_child, graph);
 
-                // Return both children in a tuple
-                (Chromosome {route: first_child, cost: first_child_fitness}, 
-                Chromosome {route: second_child, cost: second_child_fitness})
+                // Return both Chromosomes in a tuple
+                (
+                    Chromosome {
+                        route: first_child, 
+                        cost: first_child_fitness
+                    },   
+                    Chromosome {
+                        route: second_child, 
+                        cost: second_child_fitness
+                    }
+                )
             }
             // Ordered Crossover
-            1 => todo!(),
+            1 => {
+                // define the fist parent as Chromosome this function is cast on and the second parent as Chromosome passed into function
+                let first_parent: &&[u32] = &self.route.as_slice();
+                let second_parent: &&[u32] = &other.route.as_slice();
+
+                // Select 4 crossover points so that two slices can be taken from the parent, sort them so slices dont overlap
+                let mut crossover_points: Vec<usize> = index::sample(&mut thread_rng(), self.route.len(), 4).into_vec();
+                crossover_points.sort();
+
+                let first_child: Vec<u32> = Chromosome::ordered_crossover(first_parent, second_parent, &crossover_points);
+                let second_child: Vec<u32> = Chromosome::ordered_crossover(second_parent, first_parent, &crossover_points);
+
+                // Calculate fitness of the children
+                let first_child_fitness: f64 = Chromosome::fitness(&first_child, graph);
+                let second_child_fitness: f64 = Chromosome::fitness(&second_child, graph);
+
+                // Return both Chromosomes in a tuple
+                (
+                    Chromosome {
+                        route: first_child, 
+                        cost: first_child_fitness
+                    },   
+                    Chromosome {
+                        route: second_child, 
+                        cost: second_child_fitness
+                    }
+                )
+            },
             // No other options are possible as Clap's Value Parser will reject them
             _ => unreachable!(),
         }
@@ -213,7 +359,7 @@ impl Chromosome {
             // This accounts for that
             if i == 0 {
                 // Find last city
-                let prev = route.iter().last().unwrap();
+                let prev: &u32 = route.iter().last().unwrap();
 
                 // Loop through each city in country
                 for (index, vert) in graph.vertex.iter().enumerate() {
