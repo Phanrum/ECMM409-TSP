@@ -64,6 +64,8 @@ impl Chromosome {
     }
 
     /// Function to use inversion mutation on a [`Chromosome`]
+    /// Like rust .. format first index is inclusive and second_index is exclusive
+    /// Therefore it must be ensured that they are not the same
     fn inversion(&mut self, first_index: usize, second_index: usize) {
         // Create an empty vector with preallocated capacity to improve performace
         let mut new_route: Vec<u32> = Vec::with_capacity(self.route.len());
@@ -71,19 +73,29 @@ impl Chromosome {
         // Split the old route into a slice containing all genes before first_index and a slice containing the rest
         let (first_slice, remainder) = self.route.as_slice().split_at(first_index);
 
-        // Split the remainder into a slice containing all 
+        // Split the remainder into a slice containing all genes before second_index and a slice containing those after
         let (centre, second_slice) = remainder.split_at(second_index - first_slice.len());
 
+        println!("First slice: {:?}", first_slice);
+
+        println!("Second slice: {:?}", second_slice);
+
         // Use .concat() method to flatten two slices together.
-        let mut subslice: Vec<u32> = [second_slice, first_slice].concat();
+        let mut subslice: Vec<u32> = [first_slice, second_slice].concat();
+
+        println!("Subslice: {:?}", subslice);
 
         // Invert the slice
         subslice.reverse();
+
+        println!("Subslice reversed: {:?}", subslice);
 
         // Rebuild the route, using extend_from_slice to append genes in order
         new_route.extend_from_slice(&subslice[0..first_slice.len()]);
         new_route.extend_from_slice(centre);
         new_route.extend_from_slice(&subslice[first_slice.len()..]);
+
+        println!("New route: {:?}", new_route);
 
         // Replace the old route with the new one
         let _ = std::mem::replace(&mut self.route, new_route);
@@ -473,5 +485,23 @@ mod test {
         let (child_one, child_two) = parent_one.crossover(&parent_two, 0, &burma_small.graph);
 
         println!("first child: {:?} second child: {:?} first parent: {:?} second parent: {:?}", child_one, child_two, parent_one, parent_two)
+    }
+
+    #[test]
+    fn check_mutation() {
+        let burma_small: Country = serde_xml_rs::from_str(SRC).unwrap();
+        let route = vec![0,1,2,3,4,5];
+        let fitness = Chromosome::fitness(&route, &burma_small.graph);
+
+        let mut chromo = Chromosome::new(route, fitness);
+
+        chromo.inversion(3, 4);
+
+        assert_eq!(chromo.route, vec![5,4,2,3,1,0], "expected: {:?} actual: {:?}", vec![5,4,2,3,1,0], chromo.route)
+    }
+
+    #[test]
+    fn check_ordered_crossover() {
+        todo!()
     }
 }
