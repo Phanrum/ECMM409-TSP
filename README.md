@@ -17,6 +17,8 @@ Please note, this program uses a plotter called [plotters](https://github.com/pl
 ## Windows/OSX
 No dependancies required
 
+---
+
 To compile, in your terminal run the command:
 
 `cargo build --release`
@@ -63,6 +65,8 @@ Program will run with:
 - Multiple Swap Mutation
 
 `./TSP -p 1000 -c 0`
+
+---
 
 Program will run with:
 - Population of 1,000
