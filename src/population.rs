@@ -135,8 +135,8 @@ impl Population {
     pub fn selection_and_replacement(&mut self, tournament_size: u32, crossover_operator: u8, mutation_operator: u8, country_data: &Graph) -> Result<()> {
 
         // Select first and second parents using tournaments
-        let first_parent = Population::run_tournament(&self, tournament_size);
-        let second_parent = Population::run_tournament(&self, tournament_size);
+        let first_parent = Population::run_tournament(self, tournament_size);
+        let second_parent = Population::run_tournament(self, tournament_size);
 
         // Use crossover to generate two children from the parents
         let (mut first_child, mut second_child) = first_parent.crossover(&second_parent, crossover_operator, country_data)?;

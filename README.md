@@ -16,7 +16,7 @@ Please note, this program uses a plotter called [plotters](https://github.com/pl
 `cmake fontconfig-devel`
 
 ### Windows/OSX
-No dependancies required
+No dependencies required
 
 ## Compiling Instructions
 
@@ -74,3 +74,32 @@ Program will run with:
 - Default Tournament size of 5
 - Crossover with fix
 - Default Single Swap Mutation
+
+# Documentation
+
+This code is extensivly commented throughout, however if you wish to read through the library for this code more comfortably then `Cargo` helfully allows that.
+Unfortunatly you wont be able to use this for my main.rs, as this is meant for libraries.
+
+Running:
+
+`Cargo doc --no-deps --open`
+
+Will open a page on your browers containing all my libraries functions with their comments rendered in marckdown. You can also see the underlying source code of 
+any function, impl block, struct etc with the *source* button located to their right.
+
+If you wish to read through the documentation including the dependencies I brought in for this project, you can run
+
+`Cargo doc --open`
+
+My dependencies were:
+- chrono
+- clap
+- color-eyre
+- indicatif
+- plotters
+- rand
+- serde
+- serde-xml-rs
+
+All the other pages are dependencies of my dependencies
+

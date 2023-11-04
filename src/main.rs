@@ -22,7 +22,7 @@ use color_eyre::{Result, eyre::ContextCompat};
 const NUMBER_OF_GENERATIONS: usize = 10000;
 
 /// A Rust program to solve the Travelling Salesman Problem. It uses a steady state evolutionary algorithm
-///  and assumes its givenXML files detailing the costs associated with travel between each city.
+///  and assumes its given XML files detailing the costs associated with travel between each city.
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
 struct Cli {
