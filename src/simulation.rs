@@ -2,12 +2,7 @@
 
 use indicatif::ProgressBar;
 
-use crate::chromosome::Chromosome;
-use crate::country::Country;
-use crate::population::Population;
-
-/// This is hardcoded for the course requirement
-//const NUMBER_OF_GENERATIONS: usize = 10000;
+use super::{chromosome::Chromosome, country::Country, population::Population};
 
 /// The `Simulation` type, which contains all the information needed to run the simultation
 pub struct Simulation {
@@ -102,7 +97,7 @@ impl Simulation {
             // Set the position of the progress bar to the current generation
             progress_bar.set_position(i as u64);
         }
-
+        // Change message displayed to show that the countries simulation is finished
         progress_bar.finish_with_message(format!("{} Done", self.country_data.name));
     }
 }

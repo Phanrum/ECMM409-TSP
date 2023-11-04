@@ -66,7 +66,7 @@ impl Chromosome {
     /// Function to use inversion mutation on a [`Chromosome`]
     /// Like rust .. format first index is inclusive and second_index is exclusive
     /// Therefore it must be ensured that they are not the same
-    fn inversion(&mut self, first_index: usize, second_index: usize) {
+    pub fn inversion(&mut self, first_index: usize, second_index: usize) {
         // Create an empty vector with preallocated capacity to improve performace
         let mut new_route: Vec<u32> = Vec::with_capacity(self.route.len());
 
@@ -172,7 +172,7 @@ impl Chromosome {
     }
 
     /// Function to fix a crossover, taking the child and slices from both parents
-    fn fix_crossover(child: &mut Vec<u32>, crossover_point: usize) {
+    pub fn fix_crossover(child: &mut Vec<u32>, crossover_point: usize) {
         // Create a list containing every gene
         let master_list: Vec<u32> = (0..child.len() as u32).collect();
 
@@ -218,7 +218,7 @@ impl Chromosome {
     /// 
     /// An ordered crossover is taking two slices from the parent and keeping those genes the same in the child,
     /// but then reordering the genes outside those slices into the order they appear in the second parent
-    fn ordered_crossover(first_parent: &&[u32], second_parent: &&[u32], crossover_points: &[usize]) -> Vec<u32> {
+    pub fn ordered_crossover(first_parent: &&[u32], second_parent: &&[u32], crossover_points: &[usize]) -> Vec<u32> {
         // Define first and second slice using the crossover points
         let first_slice: &[u32] = first_parent
             .get(crossover_points[0]..=crossover_points[1])
@@ -401,107 +401,5 @@ impl Chromosome {
         }
         // Return cost
         cost
-    }
-}
-
-#[cfg(test)]
-mod test {
-    use crate::country::Country;
-    use super::*;
-
-    const SRC: &str = r#"<travellingSalesmanProblemInstance>
-    <name>burma14</name>
-    <source>TSPLIB</source>
-    <description>14-Staedte in Burma (Zaw Win)</description>
-    <doublePrecision>15</doublePrecision>
-    <ignoredDigits>5</ignoredDigits>
-    <graph>
-      <vertex>
-        <edge cost="1.530000000000000e+02">1</edge>
-        <edge cost="5.100000000000000e+02">2</edge>
-        <edge cost="7.060000000000000e+02">3</edge>
-      </vertex>
-      <vertex>
-        <edge cost="1.530000000000000e+02">0</edge>
-        <edge cost="4.220000000000000e+02">2</edge>
-        <edge cost="6.640000000000000e+02">3</edge>
-      </vertex>
-      <vertex>
-        <edge cost="5.100000000000000e+02">0</edge>
-        <edge cost="4.220000000000000e+02">1</edge>
-        <edge cost="2.890000000000000e+02">3</edge>
-      </vertex>
-      <vertex>
-        <edge cost="7.060000000000000e+02">0</edge>
-        <edge cost="6.640000000000000e+02">1</edge>
-        <edge cost="2.890000000000000e+02">2</edge>
-      </vertex>
-    </graph>
-    </travellingSalesmanProblemInstance>"#;
-
-    #[test]
-    fn check_fitness(){
-
-        let burma_small: Country = serde_xml_rs::from_str(SRC).unwrap();
-        let route = vec![2, 0, 1, 3];
-        let cost = 289.0 + 510.0 + 153.0 + 664.0;
-        let test_chromosome = Chromosome::new(route, cost);
-
-        assert_eq!(cost, Chromosome::fitness(&test_chromosome.route, &burma_small.graph), "my cost calculated {} and functions cost {}", cost, Chromosome::fitness(&test_chromosome.route, &burma_small.graph));
-    }
-
-    #[test]
-    fn check_crossover_fix() {
-
-        // first parent = [2, 1, 0, 3]
-        // second parent = [0, 2, 3, 1]
-            
-
-        let child_original: Vec<u32> = vec![2,3,0,1];
-        
-        let mut child_mut: Vec<u32> = vec![2,1,0,1];
-
-        let crossover_point = 3;
-
-        Chromosome::fix_crossover(&mut child_mut, crossover_point);
-        assert_eq!(child_mut, child_original, "expected: {:?} actual: {:?}", child_original, child_mut);
-
-    }
-
-    #[test]
-    fn check_crossover() {
-
-        // crossover point 3
-        // p1 [2, 1, 0, 3]
-        // p2 [0, 2, 3, 1]
-
-        // c1 [2, 2, 0, 1]
-        // c2 [0, 2, 0, 3]
-
-        let burma_small: Country = serde_xml_rs::from_str(SRC).unwrap();
-        let parent_one = Chromosome::generation(&burma_small.graph);
-        let parent_two = Chromosome::generation(&burma_small.graph);
-
-        let (child_one, child_two) = parent_one.crossover(&parent_two, 0, &burma_small.graph);
-
-        println!("first child: {:?} second child: {:?} first parent: {:?} second parent: {:?}", child_one, child_two, parent_one, parent_two)
-    }
-
-    #[test]
-    fn check_mutation() {
-        let burma_small: Country = serde_xml_rs::from_str(SRC).unwrap();
-        let route = vec![0,1,2,3,4,5];
-        let fitness = Chromosome::fitness(&route, &burma_small.graph);
-
-        let mut chromo = Chromosome::new(route, fitness);
-
-        chromo.inversion(3, 4);
-
-        assert_eq!(chromo.route, vec![5,4,2,3,1,0], "expected: {:?} actual: {:?}", vec![5,4,2,3,1,0], chromo.route)
-    }
-
-    #[test]
-    fn check_ordered_crossover() {
-        todo!()
     }
 }
