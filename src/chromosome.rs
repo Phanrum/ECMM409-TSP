@@ -76,26 +76,16 @@ impl Chromosome {
         // Split the remainder into a slice containing all genes before second_index and a slice containing those after
         let (centre, second_slice) = remainder.split_at(second_index - first_slice.len());
 
-        println!("First slice: {:?}", first_slice);
-
-        println!("Second slice: {:?}", second_slice);
-
         // Use .concat() method to flatten two slices together.
         let mut subslice: Vec<u32> = [first_slice, second_slice].concat();
 
-        println!("Subslice: {:?}", subslice);
-
         // Invert the slice
         subslice.reverse();
-
-        println!("Subslice reversed: {:?}", subslice);
 
         // Rebuild the route, using extend_from_slice to append genes in order
         new_route.extend_from_slice(&subslice[0..first_slice.len()]);
         new_route.extend_from_slice(centre);
         new_route.extend_from_slice(&subslice[first_slice.len()..]);
-
-        println!("New route: {:?}", new_route);
 
         // Replace the old route with the new one
         let _ = std::mem::replace(&mut self.route, new_route);

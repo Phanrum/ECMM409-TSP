@@ -19,7 +19,8 @@ use chrono::prelude::*;
 /// This is hardcoded for the course requirement
 const NUMBER_OF_GENERATIONS: usize = 10000;
 
-/// Define a struct for CLAP's CLI parser, containing all the options
+/// A Rust program to solve the Travelling Salesman Problem. It uses a steady state evolutionary algorithm
+///  and assumes its givenXML files detailing the costs associated with travel between each city.
 #[derive(Parser, Debug)]
 #[command(author, version, about, long_about = None)]
 struct Cli {
