@@ -53,7 +53,7 @@ will use the defaults, which are:
 - Single Swap Mutation
 - Crossover with fix
 
-but up to all of these can be changed.
+but up to all of these can be changed at once.
 
 ## Examles
 
@@ -65,9 +65,9 @@ Program will run with:
 - Ordered Crossover
 - Multiple Swap Mutation
 
-`./TSP -p 1000 -c 0`
-
 ---
+
+`./TSP -p 1000 -c 0`
 
 Program will run with:
 - Population of 1,000
