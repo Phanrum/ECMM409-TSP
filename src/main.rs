@@ -15,6 +15,8 @@ use indicatif::{MultiProgress, ProgressBar, ProgressState, ProgressStyle};
 use std::fmt::Write;
 // Chrono is used to get the current time and date
 use chrono::prelude::*;
+// Colour_Eyre is used to neatly propagate errors
+use color_eyre::{Result, eyre::ContextCompat};
 
 /// This is hardcoded for the course requirement
 const NUMBER_OF_GENERATIONS: usize = 10000;
@@ -39,7 +41,7 @@ struct Cli {
 }
 
 /// Define function to plot a graph of the best chromosome each generation
-fn plot(country: &Simulation, id: usize) -> Result<(), Box<dyn std::error::Error>> {
+fn plot(country: &Simulation, id: usize) -> Result<()> {
     // Current date and time
     let time: DateTime<Utc> = Utc::now();
 
@@ -60,7 +62,7 @@ fn plot(country: &Simulation, id: usize) -> Result<(), Box<dyn std::error::Error
         .best_chromosome
         .iter()
         .max_by(|x, y| x.partial_cmp(y).unwrap())
-        .unwrap()
+        .wrap_err("Cannot find best chromosome in Simulation, Simulation data empty")?
         .cost;
 
     // Write caption for plot
@@ -94,10 +96,15 @@ fn plot(country: &Simulation, id: usize) -> Result<(), Box<dyn std::error::Error
 
     // Take root and present all charts, then outut final plot
     root.present()?;
+
+    // Return OK if Function runs without error
     Ok(())
 }
 
-fn main() {
+fn main() -> Result<()> {
+    // Setup color_eyre so errors output nicely
+    color_eyre::install()?;
+
     // Create varible of type CLI and parse in info from command line
     let cli = Cli::parse();
 
@@ -107,47 +114,89 @@ fn main() {
     // Define progress bars style
     let bar_style = ProgressStyle::with_template(
         "[{elapsed_precise}] [{wide_bar:.cyan/blue}] [{percent}%] ({eta}) {msg}",
-    )
-    .unwrap()
+    )?
+    // Create custom Key to show eta for the task
     .with_key("eta", |state: &ProgressState, w: &mut dyn Write| {
         write!(w, "{:.1}s", state.eta().as_secs_f64()).unwrap()
     })
+    // Set characters to be used for Progress bar
     .progress_chars("#>-");
 
     // Define progress bar for Brazil
     let brazil_bar = multi_bar.add(ProgressBar::new(crate::NUMBER_OF_GENERATIONS as u64));
+    // Set style for Brazils progress bar
     brazil_bar.set_style(bar_style.clone());
 
     // Define progress bar for Burma
     let burma_bar = multi_bar.add(ProgressBar::new(crate::NUMBER_OF_GENERATIONS as u64));
+    // Set style for Brazils progress bar
     burma_bar.set_style(bar_style);
 
     // Spawn thread to run simulation for Brazil
     let brazil_thread = thread::spawn(move || {
-        let brazil = Country::new(true);
-        let mut brazil_simulation = Simulation::new(
+        // Set brazil variable to Brazils data if there are no errors
+        let Ok(brazil) = Country::new(true) else {
+            // If there is an error, quit program with message
+            panic!("Error: Cannot create Country")
+        };
+
+        // Create a Simulation type for Bazil
+        let brazil_simulation = Simulation::new(
             brazil,
             cli.crossover_operator,
             cli.mutation_operator,
             cli.population_size,
             cli.tournament_size,
         );
-        brazil_simulation.run(brazil_bar);
-        brazil_simulation
+
+        // Pattern Mmtching on errors
+        match brazil_simulation {
+
+            // If there are no errors, run the simulation and return the data
+            Ok(mut simulation) => {
+                simulation.run(brazil_bar).unwrap();
+                simulation
+            }
+
+            // If there is an error, quit the program and display the error
+            Err(report) => {
+                panic!("{}", report)
+            }
+        }
     });
 
     // Spawn thread to run simulation for Burma
     let burma_thread = thread::spawn(move || {
-        let burma = Country::new(false);
-        let mut burma_simulation = Simulation::new(
+        // Set burma variable to Burmas data if there are no errors
+        let Ok(burma) = Country::new(false) else {
+
+            // If there is an error, quit program with message
+            panic!("Error: Cannot create Country")
+        };
+
+        // Create a Simulation type for Burma
+        let burma_simulation = Simulation::new(
             burma,
             cli.crossover_operator,
             cli.mutation_operator,
             cli.population_size,
             cli.tournament_size,
         );
-        burma_simulation.run(burma_bar);
-        burma_simulation
+
+        // Pattern Mmtching on errors
+        match burma_simulation {
+
+            // If there are no errors, run the simulation and return the data
+            Ok(mut simulation) => {
+                simulation.run(burma_bar).unwrap();
+                simulation
+            }
+
+            // If there is an error, quit the program and display the error
+            Err(report) => {
+                panic!("{}", report)
+            }
+        }
     });
 
     // Return simulation data from threads
@@ -155,8 +204,8 @@ fn main() {
     let finished_burma = burma_thread.join().unwrap();
 
     // Use simulation data to create graphs
-    plot(&finished_brazil, 1).unwrap();
-    plot(&finished_burma, 2).unwrap();
+    plot(&finished_brazil, 1)?;
+    plot(&finished_burma, 2)?;
 
     println!(
         "The best Chromosome in Brazil {:?}",
@@ -166,4 +215,7 @@ fn main() {
         "The best Chromosome in Burma {:?}",
         finished_burma.population.best_chromosome.cost
     );
+
+    // Return OK if Function runs without error
+    Ok(())
 }

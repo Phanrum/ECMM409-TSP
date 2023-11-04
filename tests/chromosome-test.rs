@@ -38,9 +38,9 @@ fn check_fitness(){
     let cost = 289.0 + 510.0 + 153.0 + 664.0;
     let test_chromosome = chromosome::Chromosome::new(route, cost);
 
-    assert_eq!(cost, chromosome::Chromosome::fitness(&test_chromosome.route, &burma_small.graph), 
+    assert_eq!(cost, chromosome::Chromosome::fitness(&test_chromosome.route, &burma_small.graph).unwrap(), 
         "my cost calculated {} and functions cost {}", 
-        cost, chromosome::Chromosome::fitness(&test_chromosome.route, &burma_small.graph));
+        cost, chromosome::Chromosome::fitness(&test_chromosome.route, &burma_small.graph).unwrap());
 }
 
 #[test]
@@ -54,10 +54,10 @@ fn check_crossover() {
     // c2 [0, 2, 0, 3]
 
     let burma_small: country::Country = serde_xml_rs::from_str(SRC).unwrap();
-    let parent_one = chromosome::Chromosome::generation(&burma_small.graph);
-    let parent_two = chromosome::Chromosome::generation(&burma_small.graph);
+    let parent_one = chromosome::Chromosome::generation(&burma_small.graph).unwrap();
+    let parent_two = chromosome::Chromosome::generation(&burma_small.graph).unwrap();
 
-    let (child_one, child_two) = parent_one.crossover(&parent_two, 0, &burma_small.graph);
+    let (child_one, child_two) = parent_one.crossover(&parent_two, 0, &burma_small.graph).unwrap();
 
     println!("first child: {:?} second child: {:?} first parent: {:?} second parent: {:?}", child_one, child_two, parent_one, parent_two)
 }
@@ -66,11 +66,11 @@ fn check_crossover() {
 fn check_mutation() {
     let burma_small: country::Country = serde_xml_rs::from_str(SRC).unwrap();
     let route = vec![0,1,2,3,4,5];
-    let fitness = chromosome::Chromosome::fitness(&route, &burma_small.graph);
+    let fitness = chromosome::Chromosome::fitness(&route, &burma_small.graph).unwrap();
 
     let mut chromo = chromosome::Chromosome::new(route, fitness);
 
-    chromo.mutation(1, &burma_small.graph);
+    chromo.mutation(1, &burma_small.graph).unwrap();
 
     todo!()
 }

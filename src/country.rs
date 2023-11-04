@@ -5,6 +5,7 @@ use core::slice;
 use serde::Deserialize;
 use serde_xml_rs;
 use std::fs;
+use color_eyre::{eyre::WrapErr, Result};
 
 /// This struct defines the datatype of an Edge, which is the cost to get to a city as a float
 #[derive(Debug, Deserialize)]
@@ -55,20 +56,24 @@ pub struct Country {
 impl Country {
     /// Function to create the root structure for each countries XML file
     /// Due to there only being two files I have hardcoded Brazil as True and Burma as False so that no errors with intergers or strings can occur
-    pub fn new(country: bool) -> Self {
+    pub fn new(country: bool) -> Result<Self> {
         match country {
             true => {
                 // Imports the XML file as a String
-                let src = fs::read_to_string("data/brazil58.xml").unwrap();
+                let src = fs::read_to_string("data/brazil58.xml").wrap_err("Failed to read XML file")?;
                 // Convert String to &str and use serde_xml_rs to deserialize into my struct Country
-                serde_xml_rs::from_str(src.as_str()).unwrap()
+                let data: Self = serde_xml_rs::from_str(src.as_str()).wrap_err("Failed to deserialize XML data")?;
+                // Return data as the type Country
+                Ok(data)
             }
 
             false => {
                 // Imports the XML file as a String
-                let src = fs::read_to_string("data/burma14.xml").unwrap();
+                let src = fs::read_to_string("data/burma14.xml").wrap_err("Failed to read XML file")?;
                 // Convert String to &str and use serde_xml_rs to deserialize into my struct Country
-                serde_xml_rs::from_str(src.as_str()).unwrap()
+                let data: Self = serde_xml_rs::from_str(src.as_str()).wrap_err("Failed to deserialize XML data")?;
+                // Return data as the type Country
+                Ok(data)
             }
         }
     }

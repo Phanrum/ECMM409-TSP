@@ -6,6 +6,8 @@ use super::{chromosome::Chromosome, country::Graph};
 
 use rand::{thread_rng, seq::SliceRandom};
 
+use color_eyre::{eyre::ContextCompat, Result};
+
 /// The struct defines the population
 #[derive(Clone)]
 pub struct Population {
@@ -24,7 +26,7 @@ pub struct Population {
 /// Implements methods on `Population`
 impl Population {
     /// A Function to generate a new population of [`Chromosome`]s based off the size of the population and the cost data
-    pub fn new(population_size: u64, country_data: &Graph) -> Self {
+    pub fn new(population_size: u64, country_data: &Graph) -> Result<Self> {
         // Initialise mutable counter variable as 0
         let mut i: u64 = 0;
 
@@ -35,29 +37,29 @@ impl Population {
         while i < population_size {
 
             // Add a new chromosome to vector "population"
-            population_data.push(Chromosome::generation(country_data));
+            population_data.push(Chromosome::generation(country_data)?);
 
             // Increment counter
             i += 1;
         }
 
         // Find best Chromosome in population
-        let best_chromosome = Population::find_best_chromosome(&population_data);
+        let best_chromosome = Population::find_best_chromosome(&population_data)?;
 
         // Find worst Chromosome in the population
-        let worst_chromosome = Population::find_worst_chromosome(&population_data);
+        let worst_chromosome = Population::find_worst_chromosome(&population_data)?;
 
         // Find average cost of new Population
         let average_population_cost = Population::find_average_cost(&population_data);
 
         // Return new Population
-        Self { 
+        Ok(Self { 
             population_size, 
             population_data, 
             average_population_cost,
             best_chromosome,
             worst_chromosome,
-        }
+        })
     }
 
     /// A Function to find and return the average cost of a population given a vector of that populations chromosomes
@@ -73,34 +75,33 @@ impl Population {
     }
 
     /// A function to find the worst Chromosome in the population
-    pub fn find_worst_chromosome(population_data: &[Chromosome]) -> Chromosome {
+    pub fn find_worst_chromosome(population_data: &[Chromosome]) -> Result<Chromosome> {
         let worst = population_data
             .iter()
             .max_by(|x, y| x.partial_cmp(y).unwrap())
-            .unwrap();
-        worst.to_owned()
+            .wrap_err("Can't find best Chromosome in")?;
+        Ok(worst.to_owned())
     }
 
     /// A function to find the best Cromosome in the population
-    pub fn find_best_chromosome(population_data: &[Chromosome]) -> Chromosome {
+    pub fn find_best_chromosome(population_data: &[Chromosome]) -> Result<Chromosome> {
         let best = population_data
             .iter()
             .min_by(|x, y| x.partial_cmp(y).unwrap())
-            .unwrap();
-        best.to_owned()
+            .wrap_err("Can't find best Chromosome in")?;
+        Ok(best.to_owned())
     }
 
     /// A Function to implement the Replace Weakest algorithm
-    pub fn replacement(&mut self, child: Chromosome) {
+    pub fn replacement(&mut self, child: Chromosome) -> Option<()> {
         // Iterate over the population_data and find the index of the most expensive chromosome
         let worst_chromosome: (usize, Chromosome) = self.population_data
             .iter()
             .enumerate()
             // find most expensive chromosome
             .max_by(|(_,x), (_,y)| x.partial_cmp(y).unwrap())
-            .map(|(i, x)| (i, x.to_owned()))
             // strip chromosome from iter, leaving only index
-            .unwrap();
+            .map(|(i, x)| (i, x.to_owned()))?;
 
         
         // Check that the cost of the worse chromosome is actually greater than the cost of the child
@@ -109,6 +110,7 @@ impl Population {
             // Replace the worst chromosome with the child
             let _ = std::mem::replace( &mut self.population_data[worst_chromosome.0], child);
         }
+        Some(())
     }
 
     /// This function takes a tournament size, randomly picks that many chromosomes from 
@@ -130,18 +132,18 @@ impl Population {
     /// This function runs a tournament twice to obtain two parents, then it creates two children from those
     /// parents. It will take the first child and if it is better than the worst chromosome in the population
     /// it will replace it. Then it will do the same with the second child.
-    pub fn selection_and_replacement(&mut self, tournament_size: u32, crossover_operator: u8, mutation_operator: u8, country_data: &Graph) {
+    pub fn selection_and_replacement(&mut self, tournament_size: u32, crossover_operator: u8, mutation_operator: u8, country_data: &Graph) -> Result<()> {
 
         // Select first and second parents using tournaments
         let first_parent = Population::run_tournament(&self, tournament_size);
         let second_parent = Population::run_tournament(&self, tournament_size);
 
         // Use crossover to generate two children from the parents
-        let (mut first_child, mut second_child) = first_parent.crossover(&second_parent, crossover_operator, country_data);
+        let (mut first_child, mut second_child) = first_parent.crossover(&second_parent, crossover_operator, country_data)?;
 
         // Apply mutation to the two children
-        first_child.mutation(mutation_operator, country_data);
-        second_child.mutation(mutation_operator, country_data);
+        first_child.mutation(mutation_operator, country_data)?;
+        second_child.mutation(mutation_operator, country_data)?;
 
         // Run replacement function with first child first
         self.replacement(first_child);
@@ -150,7 +152,8 @@ impl Population {
 
         // Update old population stats with new ones
         let _ = std::mem::replace(&mut self.average_population_cost, Population::find_average_cost(&self.population_data));
-        let _ = std::mem::replace(&mut self.best_chromosome, Population::find_best_chromosome(&self.population_data));
-        let _ = std::mem::replace(&mut self.worst_chromosome, Population::find_worst_chromosome(&self.population_data));
+        let _ = std::mem::replace(&mut self.best_chromosome, Population::find_best_chromosome(&self.population_data)?);
+        let _ = std::mem::replace(&mut self.worst_chromosome, Population::find_worst_chromosome(&self.population_data)?);
+        Ok(())
     }
 }

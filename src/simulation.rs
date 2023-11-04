@@ -2,6 +2,8 @@
 
 use indicatif::ProgressBar;
 
+use color_eyre::Result;
+
 use super::{chromosome::Chromosome, country::Country, population::Population};
 
 /// The `Simulation` type, which contains all the information needed to run the simultation
@@ -37,8 +39,8 @@ impl Simulation {
         mutation_operator: u8,
         population_size: u64,
         tournament_size: u32,
-    ) -> Self {
-        let new_population = Population::new(population_size, &country_data.graph);
+    ) -> Result<Self> {
+        let new_population = Population::new(population_size, &country_data.graph)?;
 
         // Allocate these veectors now with the correct capacity so they dont keep reallocating as they grow.
         // They are + 1 because the population starts with these all having one value in them already
@@ -52,7 +54,7 @@ impl Simulation {
         worst_chromosome.push(new_population.worst_chromosome.clone());
         average_cost.push(new_population.average_population_cost);
 
-        Simulation {
+        Ok(Simulation {
             country_data,
             population: new_population,
             crossover_operator,
@@ -63,11 +65,11 @@ impl Simulation {
             best_chromosome,
             worst_chromosome,
             average_cost,
-        }
+        })
     }
 
     /// This function will run the simulation
-    pub fn run(&mut self, progress_bar: ProgressBar) {
+    pub fn run(&mut self, progress_bar: ProgressBar) -> Result<()> {
         // Create counter variable
         let mut i: u32 = 1;
 
@@ -79,7 +81,7 @@ impl Simulation {
                 self.crossover_operator,
                 self.mutation_operator,
                 &self.country_data.graph,
-            );
+            )?;
 
             // Update all the stats
             self.best_chromosome
@@ -99,5 +101,6 @@ impl Simulation {
         }
         // Change message displayed to show that the countries simulation is finished
         progress_bar.finish_with_message(format!("{} Done", self.country_data.name));
+        Ok(())
     }
 }

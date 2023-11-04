@@ -34,7 +34,7 @@ const SRC: &str = r#"<travellingSalesmanProblemInstance>
 fn test_manual() {
     let burma_small: country::Country = serde_xml_rs::from_str(SRC).unwrap();
 
-    let mut test_pop = population::Population::new(10, &burma_small.graph);
+    let mut test_pop = population::Population::new(10, &burma_small.graph).unwrap();
 
     println!("This is the test pop before: {:?}", test_pop.population_data);
     println!("This is the test pop average before: {:?}", test_pop.average_population_cost);
@@ -45,12 +45,12 @@ fn test_manual() {
 
     println!("parents selected are {:?} and {:?}", parent_1, parent_2);
     
-    let (mut first_child, mut second_child) = parent_1.crossover(&parent_2, 0, &burma_small.graph);
+    let (mut first_child, mut second_child) = parent_1.crossover(&parent_2, 0, &burma_small.graph).unwrap();
 
     println!("children selected are {:?} and {:?}", first_child, second_child);
 
-    first_child.mutation(1, &burma_small.graph);
-    second_child.mutation(1, &burma_small.graph);
+    first_child.mutation(1, &burma_small.graph).unwrap();
+    second_child.mutation(1, &burma_small.graph).unwrap();
 
     println!("children mutated are {:?} and {:?}", first_child, second_child);
 
@@ -67,11 +67,11 @@ fn test_auto() {
 
     let burma_small: country::Country = serde_xml_rs::from_str(SRC).unwrap();
 
-    let mut test_pop = population::Population::new(10, &burma_small.graph);
+    let mut test_pop = population::Population::new(10, &burma_small.graph).unwrap();
 
     println!("This is the test pop average before: {:?}", test_pop.average_population_cost);
 
-    test_pop.selection_and_replacement(5, 0, 1, &burma_small.graph);
+    test_pop.selection_and_replacement(5, 0, 1, &burma_small.graph).unwrap();
 
     println!("This is the test pop average after: {:?}", test_pop.average_population_cost);
 }
