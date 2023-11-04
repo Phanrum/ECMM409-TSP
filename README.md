@@ -7,17 +7,18 @@ This program requries rust installed to compile, however the executable file doe
 
 Please note, this program uses a plotter called [plotters](https://github.com/plotters-rs/plotters) which has certain dependencies.  
 
+## Dependencies
 
-## Ubuntu Linux
+### Ubuntu Linux
 `cmake pkg-config libfreetype6-dev libfontconfig1-dev`
 
-## Fedora Linux
+### Fedora Linux
 `cmake fontconfig-devel`
 
-## Windows/OSX
+### Windows/OSX
 No dependancies required
 
----
+## Compiling Instructions
 
 To compile, in your terminal run the command:
 
