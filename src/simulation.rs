@@ -2,9 +2,17 @@
 
 use indicatif::ProgressBar;
 
-use color_eyre::Result;
+use color_eyre::{Result, eyre::ContextCompat};
 
 use super::{chromosome::Chromosome, country::Country, population::Population};
+
+use rand::{thread_rng, seq::SliceRandom};
+
+// Chrono is used to get the current time and date
+use chrono::prelude::*;
+
+// Plotters is used to create plots of the data
+use plotters::prelude::*;
 
 /// The `Simulation` type, which contains all the information needed to run the simultation
 pub struct Simulation {
@@ -103,4 +111,88 @@ impl Simulation {
         progress_bar.finish_with_message(format!("{} Done", self.country_data.name));
         Ok(())
     }
+
+    /// Define function to plot a graph of the best chromosome each generation
+    pub fn plot(data: &Vec<Simulation>, id: String) -> Result<()> {
+        // Current date and time
+        let time: DateTime<Utc> = Utc::now();
+
+        // Generate unique path for plot to be saved to using date, time and id
+        let name: String = format!(
+            "results/chart-{}-({}).png",
+            time.format("%Y-%m-%d-%H-%M-%S"),
+            id
+        );
+
+        // Create root structure for charts with a specified size, coordinate 
+        // range and path and give it a white background
+        let root = BitMapBackend::new(name.as_str(), (1920, 1080)).into_drawing_area();
+        root.fill(&WHITE)?;
+
+        // Set maximum height for y axis
+        let mut y_max: f32 = 0.0;
+
+        // Loop through simulations in data
+        for i in data {
+
+            // Define the worst cost as the worst chromosome from the 
+            // first generation of the Simulations Population
+            let worst = i.worst_chromosome
+                .first()
+                .wrap_err("Cannot access Chromosome data in Simulation")?;
+
+            // If this worst cost is higher than current one, replace it
+            if worst.cost as f32 > y_max {
+                y_max = worst.cost as f32
+            }
+        }
+
+        // Write caption for plot
+        let caption = format!(
+            "TSP of dataset {}, using a population size of {}, with a tournament size of {}",
+            id, data.first().unwrap().population_size, data.first().unwrap().tournament_size
+        );
+
+        // Create a chart for the graph to be drawn on
+        let mut chart = ChartBuilder::on(&root)
+            .margin(10)
+            .caption(caption, ("sans-serif", 30).into_font())
+            .margin(10)
+            .x_label_area_size(50)
+            .y_label_area_size(50)
+            .build_cartesian_2d(0f32..10000f32, 0f32..y_max)?;
+
+        // Add a mesh object to chart
+        chart.configure_mesh().x_labels(5).y_labels(5).draw()?;
+
+        // Get array of colours
+        let colours = [BLACK, BLUE, CYAN, GREEN, MAGENTA, RED, YELLOW];
+
+
+        for sim in data {
+
+            // Create vector for x & y coordinates from country data
+            let country_coords = sim
+                .best_chromosome
+                .iter()
+                .enumerate()
+                .map(|(x, y)| (x as f32, y.cost as f32))
+                .collect::<Vec<(f32, f32)>>();
+
+            let colour =  colours.choose(&mut thread_rng()).wrap_err("Could not pick colour for line plot")?;
+
+            // Draw country data as a line graoh on chart
+            chart.draw_series(LineSeries::new(country_coords, colour))?;
+        }
+
+        // Take root and present all charts, then outut final plot
+        root.present()?;
+
+        // Return OK if Function runs without error
+        Ok(())
+}
+
+
+
+
 }

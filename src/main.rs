@@ -1,22 +1,18 @@
 // Importing my programs modules
 use tsp_coursework::{country::Country, simulation::Simulation};
-
-// Importing thread to allow for multithreading
-use std::thread;
-
+// Importing thread and sync to allow for multithreading
+use std::{thread, sync::mpsc};
+// Import HashMap
+use std::collections::HashMap;
 // Here I am importing my external dependancies:
 // Clap is used to make the command line interface
 use clap::Parser;
-// Plotters is used to create plots of the data
-use plotters::prelude::*;
 // Indicatif is used to create progress bars for the terminal
 // Import Write from standard library to output custom key
 use indicatif::{MultiProgress, ProgressBar, ProgressState, ProgressStyle};
 use std::fmt::Write;
-// Chrono is used to get the current time and date
-use chrono::prelude::*;
 // Colour_Eyre is used to neatly propagate errors
-use color_eyre::{Result, eyre::ContextCompat};
+use color_eyre::Result;
 
 /// This is hardcoded for the course requirement
 const NUMBER_OF_GENERATIONS: usize = 10000;
@@ -38,69 +34,12 @@ struct Cli {
     /// Tournament size: Minimum 2, Default 5.
     #[arg(value_parser = clap::value_parser!(u32).range(2..), default_value_t = 5, short, long)]
     tournament_size: u32,
+    /// Number of Runs: Minumum 1, Default 1. Note that double this value will be the number of threads used
+    #[arg(value_parser = clap::value_parser!(u32).range(1..), default_value_t = 1, short, long)]
+    number_runs: u32,
 }
 
-/// Define function to plot a graph of the best chromosome each generation
-fn plot(country: &Simulation, id: usize) -> Result<()> {
-    // Current date and time
-    let time: DateTime<Utc> = Utc::now();
-
-    // Generate unique path for plot to be saved to using date, time and id
-    let name: String = format!(
-        "results/chart-{}-({}).png",
-        time.format("%Y-%m-%d-%H-%M-%S"),
-        id
-    );
-
-    // Create root structure for charts with a specified size, coordinate 
-    // range and path and give it a white background
-    let root = BitMapBackend::new(name.as_str(), (1920, 1080)).into_drawing_area();
-    root.fill(&WHITE)?;
-
-    // Get highest value for y axis
-    let y_max = country
-        .best_chromosome
-        .iter()
-        .max_by(|x, y| x.partial_cmp(y).unwrap())
-        .wrap_err("Cannot find best chromosome in Simulation, Simulation data empty")?
-        .cost;
-
-    // Write caption for plot
-    let caption = format!(
-        "TSP in {}, using a population of {} with a tournament size of {}",
-        country.country_data.name, country.population_size, country.tournament_size
-    );
-
-    // Create a chart for the graph to be drawn on
-    let mut chart = ChartBuilder::on(&root)
-        .margin(10)
-        .caption(caption, ("sans-serif", 50).into_font())
-        .margin(10)
-        .x_label_area_size(30)
-        .y_label_area_size(30)
-        .build_cartesian_2d(0f32..10000f32, 0f32..y_max as f32)?;
-
-    // Add a mesh object to chart
-    chart.configure_mesh().x_labels(5).y_labels(5).draw()?;
-
-    // Create vector for x & y coordinates from country data
-    let country_coords = country
-        .best_chromosome
-        .iter()
-        .enumerate()
-        .map(|(x, y)| (x as f32, y.cost as f32))
-        .collect::<Vec<(f32, f32)>>();
-
-    // Draw country data as a line graoh on chart
-    chart.draw_series(LineSeries::new(country_coords, &RED))?;
-
-    // Take root and present all charts, then outut final plot
-    root.present()?;
-
-    // Return OK if Function runs without error
-    Ok(())
-}
-
+/// Main function for this program
 fn main() -> Result<()> {
     // Setup color_eyre so errors output nicely
     color_eyre::install()?;
@@ -122,100 +61,92 @@ fn main() -> Result<()> {
     // Set characters to be used for Progress bar
     .progress_chars("#>-");
 
-    // Define progress bar for Brazil
-    let brazil_bar = multi_bar.add(ProgressBar::new(crate::NUMBER_OF_GENERATIONS as u64));
-    // Set style for Brazils progress bar
-    brazil_bar.set_style(bar_style.clone());
+    // Get Countries data from the data directory
+    let input_data = Country::new()?;
 
-    // Define progress bar for Burma
-    let burma_bar = multi_bar.add(ProgressBar::new(crate::NUMBER_OF_GENERATIONS as u64));
-    // Set style for Brazils progress bar
-    burma_bar.set_style(bar_style);
+    // Create vector for Simulations 
+    let mut output_data: Vec<Simulation> = Vec::with_capacity(input_data.capacity() * cli.number_runs as usize);
 
-    // Spawn thread to run simulation for Brazil
-    let brazil_thread = thread::spawn(move || {
-        // Set brazil variable to Brazils data if there are no errors
-        let Ok(brazil) = Country::new(true) else {
-            // If there is an error, quit program with message
-            panic!("Error: Cannot create Country")
-        };
+    // Create Multi-producer, single-consumer channel
+    let (tx, rx) = mpsc::channel();
 
-        // Create a Simulation type for Bazil
-        let brazil_simulation = Simulation::new(
-            brazil,
-            cli.crossover_operator,
-            cli.mutation_operator,
-            cli.population_size,
-            cli.tournament_size,
-        );
+    // Create a vector to hold the thread handlers
+    let mut threads = Vec::with_capacity(input_data.len() * cli.number_runs as usize);
 
-        // Pattern Mmtching on errors
-        match brazil_simulation {
+    // Loop for number of runs specified
+    for _ in 0..cli.number_runs {
 
-            // If there are no errors, run the simulation and return the data
-            Ok(mut simulation) => {
-                simulation.run(brazil_bar).unwrap();
-                simulation
-            }
+        // Loop over each seperate file in the directory
+        for country in &input_data {
 
-            // If there is an error, quit the program and display the error
-            Err(report) => {
-                panic!("{}", report)
-            }
+            // Clone transmitter so the thread will have a unique one
+            let thread_tx = tx.clone();
+
+            // Clone the country data because only one thread can have access to a value at a time
+            let country_data = (*country).clone();
+
+            // Create a new progress bar for this operation and add styling
+            let progress_bar = multi_bar.add(ProgressBar::new(crate::NUMBER_OF_GENERATIONS as u64));
+            progress_bar.set_style(bar_style.clone());
+
+            // Generate a Thread to build and run the simulation
+            let thread = thread::spawn(move || -> Result<()> {
+
+                // Create a Simulation type
+                let mut simulation = Simulation::new(
+                    country_data,
+                    cli.crossover_operator,
+                    cli.mutation_operator,
+                    cli.population_size,
+                    cli.tournament_size,
+                )?;
+
+                // Run the Simulation
+                simulation.run(progress_bar)?;
+
+                // Transmit the simulation back to main
+                thread_tx.send(simulation)?;
+
+                // Exit thread
+                Ok(())
+            });
+
+            // Push the Thread Handler to the threads vector
+            threads.push(thread)
         }
-    });
+    }
 
-    // Spawn thread to run simulation for Burma
-    let burma_thread = thread::spawn(move || {
-        // Set burma variable to Burmas data if there are no errors
-        let Ok(burma) = Country::new(false) else {
+    // The number of threads spawned is the number of files multiplied by the number of runs specified
+    // Loop for this value and push the result of each one to the output_data vector
+    for _ in 0..cli.number_runs * input_data.len() as u32 {
+        output_data.push(rx.recv()?);
+    }
 
-            // If there is an error, quit program with message
-            panic!("Error: Cannot create Country")
-        };
+    // Loop through the vector of thread handlers and close each thread
+    for thread in threads {
+        thread.join().expect("Threads panicked")?;
+    }
 
-        // Create a Simulation type for Burma
-        let burma_simulation = Simulation::new(
-            burma,
-            cli.crossover_operator,
-            cli.mutation_operator,
-            cli.population_size,
-            cli.tournament_size,
-        );
+    // Create a hashmap to store all the simulations by their names
+    let mut ordered_data: HashMap<String, Vec<Simulation>> = HashMap::with_capacity(output_data.capacity());
 
-        // Pattern Mmtching on errors
-        match burma_simulation {
+    // Loop over each Simulation in output_data
+    for sim in output_data {
+        ordered_data
+            // Get the entry of the key, where the key is the name out the country used
+            .entry(sim.country_data.name.clone())
+            // If that key doesnt exist yet, create it and set its entry to be an empty vector
+            .or_default()
+            // Push the Simulation into the entry
+            .push(sim);
+    }
 
-            // If there are no errors, run the simulation and return the data
-            Ok(mut simulation) => {
-                simulation.run(burma_bar).unwrap();
-                simulation
-            }
+    // For each Simulation in ordered_data create a plot for it
+    ordered_data.retain(|key: &String, data: &mut Vec<Simulation>| {
+        Simulation::plot(data, key.clone()).expect("Plotting of Simulation failed");
+        true
+    } );
 
-            // If there is an error, quit the program and display the error
-            Err(report) => {
-                panic!("{}", report)
-            }
-        }
-    });
-
-    // Return simulation data from threads
-    let finished_brazil = brazil_thread.join().unwrap();
-    let finished_burma = burma_thread.join().unwrap();
-
-    // Use simulation data to create graphs
-    plot(&finished_brazil, 1)?;
-    plot(&finished_burma, 2)?;
-
-    println!(
-        "The best Chromosome in Brazil {:?}",
-        finished_brazil.population.best_chromosome.cost
-    );
-    println!(
-        "The best Chromosome in Burma {:?}",
-        finished_burma.population.best_chromosome.cost
-    );
-
-    // Return OK if Function runs without error
+    // End program
     Ok(())
 }
