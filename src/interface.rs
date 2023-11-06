@@ -15,14 +15,15 @@ pub struct Cli {
     /// Population size: Minimum 10.
     #[arg(value_parser = clap::value_parser!(u64).range(10..), default_value_t = 50, short, long)]
     pub population_size: u64,
-    /// Tournament size: Minimum 2.
+    /// Tournament size: Minimum 2. Cannot exceed population size
     #[arg(value_parser = clap::value_parser!(u32).range(2..), default_value_t = 5, short, long)]
     pub tournament_size: u32,
-    /// Number of Runs: Minumum 1. Note that double this value will be the number of threads used
+    /// Number of Runs: Minumum 1.
     #[arg(value_parser = clap::value_parser!(u32).range(1..), default_value_t = 1, short, long)]
     pub number_runs: u32,
 }
 
+/// Enumerate that represents the possible state of the mutation type
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum)]
 pub enum MutationOperator {
 
@@ -36,6 +37,7 @@ pub enum MutationOperator {
     Multiple,
 }
 
+/// Enumerate that represents the possible state of the crossover type
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum)]
 pub enum CrossoverOperator {
 
