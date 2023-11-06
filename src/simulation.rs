@@ -4,7 +4,17 @@ use indicatif::ProgressBar;
 
 use color_eyre::{Result, eyre::ContextCompat};
 
-use super::{chromosome::Chromosome, country::Country, population::Population};
+use crate::NUMBER_OF_GENERATIONS;
+
+use super::{
+    chromosome::Chromosome, 
+    country::Country, 
+    interface::{
+        MutationOperator, 
+        CrossoverOperator
+    }, 
+    population::Population
+};
 
 use rand::{thread_rng, seq::SliceRandom};
 
@@ -21,9 +31,9 @@ pub struct Simulation {
     /// The actual population of chromosomes for the simulation
     pub population: Population,
     /// Crossover operator: 0 = crossover with fix, 1 = ordered crossover.
-    pub crossover_operator: u8,
+    pub crossover_operator: CrossoverOperator,
     /// Mutation operator: 0 = inversion, 1 = single swap mutation, 2 = multiple swap mutation
-    pub mutation_operator: u8,
+    pub mutation_operator: MutationOperator,
     /// Population size: Minimum 10, Default 50.
     pub population_size: u64,
     /// Tournament size: Minimum 2, Default 5.
@@ -43,8 +53,8 @@ impl Simulation {
     /// This function creates a new [`Simulation`] with a random [`Population`]
     pub fn new(
         country_data: Country,
-        crossover_operator: u8,
-        mutation_operator: u8,
+        crossover_operator: CrossoverOperator,
+        mutation_operator: MutationOperator,
         population_size: u64,
         tournament_size: u32,
     ) -> Result<Self> {
@@ -53,10 +63,10 @@ impl Simulation {
         // Allocate these veectors now with the correct capacity so they dont keep reallocating as they grow.
         // They are + 1 because the population starts with these all having one value in them already
         let mut best_chromosome: Vec<Chromosome> =
-            Vec::with_capacity(crate::NUMBER_OF_GENERATIONS + 1);
+            Vec::with_capacity(NUMBER_OF_GENERATIONS + 1);
         let mut worst_chromosome: Vec<Chromosome> =
-            Vec::with_capacity(crate::NUMBER_OF_GENERATIONS + 1);
-        let mut average_cost: Vec<f64> = Vec::with_capacity(crate::NUMBER_OF_GENERATIONS + 1);
+            Vec::with_capacity(NUMBER_OF_GENERATIONS + 1);
+        let mut average_cost: Vec<f64> = Vec::with_capacity(NUMBER_OF_GENERATIONS + 1);
 
         best_chromosome.push(new_population.best_chromosome.clone());
         worst_chromosome.push(new_population.worst_chromosome.clone());
@@ -69,7 +79,7 @@ impl Simulation {
             mutation_operator,
             population_size,
             tournament_size,
-            generations: crate::NUMBER_OF_GENERATIONS as u32,
+            generations: NUMBER_OF_GENERATIONS as u32,
             best_chromosome,
             worst_chromosome,
             average_cost,
@@ -147,9 +157,12 @@ impl Simulation {
             }
         }
 
+        // Adds 10% to the height of the Y axis
+        y_max *= 1.1;
+
         // Write caption for plot
         let caption = format!(
-            "TSP of dataset {}, using a population size of {}, with a tournament size of {}",
+            "TSP of dataset {}, population size: {}, tournament size: {}, mutation:",
             id, data.first().unwrap().population_size, data.first().unwrap().tournament_size
         );
 
@@ -160,10 +173,15 @@ impl Simulation {
             .margin(10)
             .x_label_area_size(50)
             .y_label_area_size(50)
-            .build_cartesian_2d(0f32..10000f32, 0f32..y_max)?;
+            .build_cartesian_2d(0f32..NUMBER_OF_GENERATIONS as f32, 0f32..y_max)?;
 
         // Add a mesh object to chart
-        chart.configure_mesh().x_labels(5).y_labels(5).draw()?;
+        chart.configure_mesh()
+            .x_labels(5)
+            .x_desc("Generations Passed")
+            .y_labels(5)
+            .y_desc("Average cost")
+            .draw()?;
 
         // Get array of colours
         let colours = [BLACK, BLUE, CYAN, GREEN, MAGENTA, RED, YELLOW];
@@ -173,10 +191,10 @@ impl Simulation {
 
             // Create vector for x & y coordinates from country data
             let country_coords = sim
-                .best_chromosome
+                .average_cost
                 .iter()
                 .enumerate()
-                .map(|(x, y)| (x as f32, y.cost as f32))
+                .map(|(x, y)| (x as f32, *y as f32))
                 .collect::<Vec<(f32, f32)>>();
 
             let colour =  colours.choose(&mut thread_rng()).wrap_err("Could not pick colour for line plot")?;

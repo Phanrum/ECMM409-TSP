@@ -1,7 +1,14 @@
 //! This module defines [`Population`] and all its methods
 
 
-use super::{chromosome::Chromosome, country::Graph};
+use super::{
+        chromosome::Chromosome, 
+        country::Graph, 
+        interface::{
+            MutationOperator, 
+            CrossoverOperator
+        }
+    };
 
 
 use rand::{thread_rng, seq::SliceRandom};
@@ -132,7 +139,13 @@ impl Population {
     /// This function runs a tournament twice to obtain two parents, then it creates two children from those
     /// parents. It will take the first child and if it is better than the worst chromosome in the population
     /// it will replace it. Then it will do the same with the second child.
-    pub fn selection_and_replacement(&mut self, tournament_size: u32, crossover_operator: u8, mutation_operator: u8, country_data: &Graph) -> Result<()> {
+    pub fn selection_and_replacement(
+        &mut self, 
+        tournament_size: u32, 
+        crossover_operator: CrossoverOperator, 
+        mutation_operator: MutationOperator, 
+        country_data: &Graph
+    ) -> Result<()> {
 
         // Select first and second parents using tournaments
         let first_parent = Population::run_tournament(self, tournament_size);
@@ -151,9 +164,19 @@ impl Population {
         self.replacement(second_child);
 
         // Update old population stats with new ones
-        let _ = std::mem::replace(&mut self.average_population_cost, Population::find_average_cost(&self.population_data));
-        let _ = std::mem::replace(&mut self.best_chromosome, Population::find_best_chromosome(&self.population_data)?);
-        let _ = std::mem::replace(&mut self.worst_chromosome, Population::find_worst_chromosome(&self.population_data)?);
+        let _ = std::mem::replace(
+            &mut self.average_population_cost, 
+            Population::find_average_cost(&self.population_data)
+        );
+        let _ = std::mem::replace(
+            &mut self.best_chromosome, 
+            Population::find_best_chromosome(&self.population_data)?
+        );
+        let _ = std::mem::replace(
+            &mut self.worst_chromosome, 
+            Population::find_worst_chromosome(&self.population_data)?
+        );
+        
         Ok(())
     }
 }

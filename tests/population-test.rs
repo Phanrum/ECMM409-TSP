@@ -45,12 +45,12 @@ fn test_manual() {
 
     println!("parents selected are {:?} and {:?}", parent_1, parent_2);
     
-    let (mut first_child, mut second_child) = parent_1.crossover(&parent_2, 0, &burma_small.graph).unwrap();
+    let (mut first_child, mut second_child) = parent_1.crossover(&parent_2, interface::CrossoverOperator::Fix, &burma_small.graph).unwrap();
 
     println!("children selected are {:?} and {:?}", first_child, second_child);
 
-    first_child.mutation(1, &burma_small.graph).unwrap();
-    second_child.mutation(1, &burma_small.graph).unwrap();
+    first_child.mutation(interface::MutationOperator::Single, &burma_small.graph).unwrap();
+    second_child.mutation(interface::MutationOperator::Single, &burma_small.graph).unwrap();
 
     println!("children mutated are {:?} and {:?}", first_child, second_child);
 
@@ -69,9 +69,21 @@ fn test_auto() {
 
     let mut test_pop = population::Population::new(10, &burma_small.graph).unwrap();
 
-    println!("This is the test pop average before: {:?}", test_pop.average_population_cost);
+    println!(
+        "This is the test pop average before: {:?}", 
+        test_pop.average_population_cost
+    );
 
-    test_pop.selection_and_replacement(5, 0, 1, &burma_small.graph).unwrap();
+    test_pop
+        .selection_and_replacement(
+            5, 
+            interface::CrossoverOperator::Fix, 
+            interface::MutationOperator::Single, 
+            &burma_small.graph,
+    ).unwrap();
 
-    println!("This is the test pop average after: {:?}", test_pop.average_population_cost);
+    println!(
+        "This is the test pop average after: {:?}", 
+        test_pop.average_population_cost
+    );
 }

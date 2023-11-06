@@ -2,7 +2,13 @@
 //! 
 //! [pop]: crate::population::Population
 
-use crate::country::Graph;
+use super::{
+    country::Graph, 
+    interface::{
+        MutationOperator, 
+        CrossoverOperator
+    }
+};
 use rand::{thread_rng, Rng, seq::{SliceRandom, index}};
 use std::cmp::Ordering;
 use color_eyre::{eyre::ContextCompat, Result};
@@ -93,10 +99,10 @@ impl Chromosome {
     }
 
     /// Function to mutate a [`Chromosome`]s genes using multiple different methods
-    pub fn mutation(&mut self, mutation_operator: u8, graph: &Graph) -> Result<()> {
+    pub fn mutation(&mut self, mutation_operator: MutationOperator, graph: &Graph) -> Result<()> {
         match mutation_operator {
             // Inversion
-            0 => {
+            MutationOperator::Inversion => {
                 // Select which  to swap randomly
                 let first_index: usize = thread_rng().gen_range(1..=self.route.len());
                 let mut second_index: usize = thread_rng().gen_range(1..=self.route.len());
@@ -130,7 +136,7 @@ impl Chromosome {
                 }
             },
             // Single Swap
-            1 => {
+            MutationOperator::Single => {
                 // Select which genes to swap randomly
                 let first_gene: usize = thread_rng().gen_range(0..self.route.len());
                 let mut second_gene: usize = thread_rng().gen_range(0..self.route.len());
@@ -148,7 +154,7 @@ impl Chromosome {
                 Ok(())
             },
             // Multiple Swap
-            2 => {
+            MutationOperator::Multiple => {
                 // Randomly sample 4 distinct indices from 0..self.route.len(), and return them in random order (fully shuffled).
                 let results = index::sample(&mut thread_rng(), self.route.len(), 4).into_vec();
 
@@ -161,8 +167,6 @@ impl Chromosome {
                 let _ = std::mem::replace(&mut self.cost, Chromosome::fitness(&self.route, graph)?);
                 Ok(())
             },
-            // No other options are possible as Clap's Value Parser will reject them
-            _ => unreachable!()
         }
     }
 
@@ -213,7 +217,11 @@ impl Chromosome {
     /// 
     /// An ordered crossover is taking two slices from the parent and keeping those genes the same in the child,
     /// but then reordering the genes outside those slices into the order they appear in the second parent
-    pub fn ordered_crossover(first_parent: &&[u32], second_parent: &&[u32], crossover_points: &[usize]) -> Result<Vec<u32>> {
+    pub fn ordered_crossover(
+        first_parent: &&[u32], 
+        second_parent: &&[u32], 
+        crossover_points: &[usize]
+    ) -> Result<Vec<u32>> {
         // Define first and second slice using the crossover points
         let first_slice: &[u32] = first_parent
             .get(crossover_points[0]..=crossover_points[1])
@@ -285,10 +293,16 @@ impl Chromosome {
     /// A crossover_operator of 0 results in a Crossover with fix
     /// A crossover_operator of 1 results in a Ordered Crossover
     /// NOTE: If the Chromosome is of length u32::MAX (4294967295) then this operation will have undefined behaviour
-    pub fn crossover(&self, other: &Chromosome, crossover_operator: u8, graph: &Graph) -> Result<(Chromosome, Chromosome)> {
+    pub fn crossover(
+        &self, 
+        other: &Chromosome, 
+        crossover_operator: CrossoverOperator, 
+        graph: &Graph
+    ) -> Result<(Chromosome, Chromosome)> {
+
         match crossover_operator {
             // Crossover with Fix
-            0 => {
+            CrossoverOperator::Fix => {
                 // Define the fist parent as Chromosome this function is cast on and the second parent as Chromosome passed into function
                 let first_parent: &&[u32] = &self.route.as_slice();
                 let second_parent: &&[u32] = &other.route.as_slice();
@@ -316,16 +330,16 @@ impl Chromosome {
                 Ok((
                     Chromosome {
                         route: first_child, 
-                        cost: first_child_fitness
+                        cost: first_child_fitness,
                     },   
                     Chromosome {
                         route: second_child, 
-                        cost: second_child_fitness
+                        cost: second_child_fitness,
                     }
                 ))
             }
             // Ordered Crossover
-            1 => {
+            CrossoverOperator::Ordered => {
                 // define the fist parent as Chromosome this function is cast on and the second parent as Chromosome passed into function
                 let first_parent: &&[u32] = &self.route.as_slice();
                 let second_parent: &&[u32] = &other.route.as_slice();
@@ -345,16 +359,14 @@ impl Chromosome {
                 Ok((
                     Chromosome {
                         route: first_child, 
-                        cost: first_child_fitness
+                        cost: first_child_fitness,
                     },   
                     Chromosome {
                         route: second_child, 
-                        cost: second_child_fitness
+                        cost: second_child_fitness,
                     }
                 ))
             },
-            // No other options are possible as Clap's Value Parser will reject them
-            _ => unreachable!(),
         }
     }
 

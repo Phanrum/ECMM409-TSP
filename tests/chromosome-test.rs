@@ -57,7 +57,7 @@ fn check_crossover() {
     let parent_one = chromosome::Chromosome::generation(&burma_small.graph).unwrap();
     let parent_two = chromosome::Chromosome::generation(&burma_small.graph).unwrap();
 
-    let (child_one, child_two) = parent_one.crossover(&parent_two, 0, &burma_small.graph).unwrap();
+    let (child_one, child_two) = parent_one.crossover(&parent_two, interface::CrossoverOperator::Fix, &burma_small.graph).unwrap();
 
     println!("first child: {:?} second child: {:?} first parent: {:?} second parent: {:?}", child_one, child_two, parent_one, parent_two)
 }
@@ -70,7 +70,7 @@ fn check_mutation() {
 
     let mut chromo = chromosome::Chromosome::new(route, fitness);
 
-    chromo.mutation(1, &burma_small.graph).unwrap();
+    chromo.mutation(interface::MutationOperator::Single, &burma_small.graph).unwrap();
 
     todo!()
 }

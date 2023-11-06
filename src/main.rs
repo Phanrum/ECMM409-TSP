@@ -1,5 +1,10 @@
 // Importing my programs modules
-use tsp_coursework::{country::Country, simulation::Simulation};
+use tsp_coursework::{
+        country::Country, 
+        interface::*, 
+        simulation::Simulation, 
+        NUMBER_OF_GENERATIONS
+    };
 // Importing thread and sync to allow for multithreading
 use std::{thread, sync::mpsc};
 // Import HashMap
@@ -9,35 +14,16 @@ use std::collections::HashMap;
 use clap::Parser;
 // Indicatif is used to create progress bars for the terminal
 // Import Write from standard library to output custom key
-use indicatif::{MultiProgress, ProgressBar, ProgressState, ProgressStyle};
+use indicatif::{
+        MultiProgress, 
+        ProgressBar, 
+        ProgressState, 
+        ProgressStyle
+    };
 use std::fmt::Write;
 // Colour_Eyre is used to neatly propagate errors
 use color_eyre::Result;
 
-/// This is hardcoded for the course requirement
-const NUMBER_OF_GENERATIONS: usize = 10000;
-
-/// A Rust program to solve the Travelling Salesman Problem. It uses a steady state evolutionary algorithm
-///  and assumes its given XML files detailing the costs associated with travel between each city.
-#[derive(Parser, Debug)]
-#[command(author, version, about, long_about = None)]
-struct Cli {
-    /// Crossover operator: 0 = crossover with fix, 1 = ordered crossover.
-    #[arg(value_parser = clap::value_parser!(u8).range(0..=1), default_value_t = 0, short, long)]
-    crossover_operator: u8,
-    /// Mutation operator: 0 = inversion, 1 = single swap mutation, 2 = multiple swap mutation
-    #[arg(value_parser = clap::value_parser!(u8).range(0..=2), default_value_t = 1, short, long)]
-    mutation_operator: u8,
-    /// Population size: Minimum 10, Default 50.
-    #[arg(value_parser = clap::value_parser!(u64).range(10..), default_value_t = 50, short, long)]
-    population_size: u64,
-    /// Tournament size: Minimum 2, Default 5.
-    #[arg(value_parser = clap::value_parser!(u32).range(2..), default_value_t = 5, short, long)]
-    tournament_size: u32,
-    /// Number of Runs: Minumum 1, Default 1. Note that double this value will be the number of threads used
-    #[arg(value_parser = clap::value_parser!(u32).range(1..), default_value_t = 1, short, long)]
-    number_runs: u32,
-}
 
 /// Main function for this program
 fn main() -> Result<()> {
@@ -86,7 +72,7 @@ fn main() -> Result<()> {
             let country_data = (*country).clone();
 
             // Create a new progress bar for this operation and add styling
-            let progress_bar = multi_bar.add(ProgressBar::new(crate::NUMBER_OF_GENERATIONS as u64));
+            let progress_bar = multi_bar.add(ProgressBar::new(NUMBER_OF_GENERATIONS as u64));
             progress_bar.set_style(bar_style.clone());
 
             // Generate a Thread to build and run the simulation
