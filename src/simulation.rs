@@ -162,8 +162,12 @@ impl Simulation {
 
         // Write caption for plot
         let caption = format!(
-            "TSP of dataset {}, population size: {}, tournament size: {}, mutation:",
-            id, data.first().unwrap().population_size, data.first().unwrap().tournament_size
+            "TSP of dataset {}, population size: {}, tournament size: {}, mutation: {:?}, crossover: {:?}",
+            id, 
+            data.first().unwrap().population_size, 
+            data.first().unwrap().tournament_size,
+            data.first().unwrap().mutation_operator,
+            data.first().unwrap().crossover_operator,
         );
 
         // Create a chart for the graph to be drawn on
