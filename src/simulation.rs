@@ -162,7 +162,7 @@ impl Simulation {
 
         // Write caption for plot
         let caption = format!(
-            "TSP of dataset {}, population size: {}, tournament size: {}, mutation: {:?}, crossover: {:?}",
+            "TSP of dataset {}, Population size: {}, Tournament size: {}, Mutation: {:?}, Crossover: {:?}",
             id, 
             data.first().unwrap().population_size, 
             data.first().unwrap().tournament_size,
