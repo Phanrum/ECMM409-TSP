@@ -162,7 +162,7 @@ impl Simulation {
         y_max *= 1.1;
 
         // Write caption for plot
-        let caption = format!(
+        let caption: String = format!(
             "TSP of dataset {}, Population size: {}, Tournament size: {}, Mutation: {:?}, Crossover: {:?}",
             id, 
             data.first().unwrap().population_size, 
@@ -214,7 +214,7 @@ impl Simulation {
                 }
 
                 // plotters requires coordinates to be in the form (f32, f32) 
-                let output = average_coords
+                let output: Vec<(f32, f32)> = average_coords
                     // Iterate over average_coords
                     .iter_mut()
                     // Get index of coords, elements are now (usize, f32)

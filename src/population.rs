@@ -51,13 +51,13 @@ impl Population {
         }
 
         // Find best Chromosome in population
-        let best_chromosome = Population::find_best_chromosome(&population_data)?;
+        let best_chromosome: Chromosome = Population::find_best_chromosome(&population_data)?;
 
         // Find worst Chromosome in the population
-        let worst_chromosome = Population::find_worst_chromosome(&population_data)?;
+        let worst_chromosome: Chromosome = Population::find_worst_chromosome(&population_data)?;
 
         // Find average cost of new Population
-        let average_population_cost = Population::find_average_cost(&population_data);
+        let average_population_cost: f64 = Population::find_average_cost(&population_data);
 
         // Return new Population
         Ok(Self { 
@@ -148,8 +148,8 @@ impl Population {
     ) -> Result<()> {
 
         // Select first and second parents using tournaments
-        let first_parent = Population::run_tournament(self, tournament_size);
-        let second_parent = Population::run_tournament(self, tournament_size);
+        let first_parent: Chromosome = Population::run_tournament(self, tournament_size);
+        let second_parent: Chromosome = Population::run_tournament(self, tournament_size);
 
         // Use crossover to generate two children from the parents
         let (mut first_child, mut second_child) = first_parent.crossover(&second_parent, crossover_operator, country_data)?;
@@ -176,7 +176,7 @@ impl Population {
             &mut self.worst_chromosome, 
             Population::find_worst_chromosome(&self.population_data)?
         );
-        
+
         Ok(())
     }
 }
