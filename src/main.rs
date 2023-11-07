@@ -33,6 +33,15 @@ fn main() -> Result<()> {
     // Create varible of type CLI and parse in info from command line
     let cli = Cli::parse();
 
+    // If the user selects a tournament size equal to the population size, warn them
+    if cli.tournament_size == cli.population_size as u32 {
+        println!("Warning: Selected Tournament Size is equal to the population size");
+      // If the user selects a tournament size greater than the population size,
+      // exit the program with an error message
+    } else if cli.tournament_size > cli.population_size as u32 {
+        panic!("ERROR: Selected Tournament Size is greater than the population size")
+    }
+
     // Create object to manage multiple progress bars
     let multi_bar = MultiProgress::new();
 
