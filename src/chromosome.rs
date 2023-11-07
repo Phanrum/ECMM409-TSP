@@ -100,6 +100,7 @@ impl Chromosome {
 
     /// Function to mutate a [`Chromosome`]s genes using multiple different methods
     pub fn mutation(&mut self, mutation_operator: MutationOperator, graph: &Graph) -> Result<()> {
+        // Pattern match off enum MutationOperator
         match mutation_operator {
             // Inversion
             MutationOperator::Inversion => {
@@ -337,7 +338,7 @@ impl Chromosome {
                         cost: second_child_fitness,
                     }
                 ))
-            }
+            },
             // Ordered Crossover
             CrossoverOperator::Ordered => {
                 // define the fist parent as Chromosome this function is cast on and the second parent as Chromosome passed into function

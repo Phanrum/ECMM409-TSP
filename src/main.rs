@@ -48,7 +48,7 @@ fn main() -> Result<()> {
     .progress_chars("#>-");
 
     // Get Countries data from the data directory
-    let input_data = Country::new()?;
+    let input_data: Vec<Country> = Country::new()?;
 
     // Create vector for Simulations 
     let mut output_data: Vec<Simulation> = Vec::with_capacity(input_data.capacity() * cli.number_runs as usize);
@@ -129,7 +129,7 @@ fn main() -> Result<()> {
 
     // For each Simulation in ordered_data create a plot for it
     ordered_data.retain(|key: &String, data: &mut Vec<Simulation>| {
-        Simulation::plot(data, key.clone()).expect("Plotting of Simulation failed");
+        Simulation::plot(data, cli.plot_operator, key.clone()).expect("Plotting of Simulation failed");
         true
     } );
 

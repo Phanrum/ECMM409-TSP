@@ -11,7 +11,8 @@ use super::{
     country::Country, 
     interface::{
         MutationOperator, 
-        CrossoverOperator
+        CrossoverOperator,
+        PlotOperator
     }, 
     population::Population
 };
@@ -123,7 +124,7 @@ impl Simulation {
     }
 
     /// Define function to plot a graph of the best chromosome each generation
-    pub fn plot(data: &Vec<Simulation>, id: String) -> Result<()> {
+    pub fn plot(data: &Vec<Simulation>, plot_operator: PlotOperator, id: String) -> Result<()> {
         // Current date and time
         let time: DateTime<Utc> = Utc::now();
 
@@ -191,30 +192,70 @@ impl Simulation {
         let colours = [BLACK, BLUE, CYAN, GREEN, MAGENTA, RED, YELLOW];
 
 
-        for sim in data {
+        match plot_operator {
+            
+            PlotOperator::Average => {
 
-            // Create vector for x & y coordinates from country data
-            let country_coords = sim
-                .average_cost
-                .iter()
-                .enumerate()
-                .map(|(x, y)| (x as f32, *y as f32))
-                .collect::<Vec<(f32, f32)>>();
 
-            let colour =  colours.choose(&mut thread_rng()).wrap_err("Could not pick colour for line plot")?;
+                // Create vector for average coords with the length 
+                // equal to the length of the first Simulations average_cost
+                let mut average_coords: Vec<f32> = vec![0.0; data[0].average_cost.len()];
 
-            // Draw country data as a line graoh on chart
-            chart.draw_series(LineSeries::new(country_coords, colour))?;
-        }
+                // Loop over every Simulation in data
+                for sim in data {
 
-        // Take root and present all charts, then outut final plot
-        root.present()?;
+                    // Loop over every elemt in the Simulations average_cost vector
+                    for (index, value) in sim.average_cost.iter().enumerate() {
+
+                        // Get value of Simulations average_cost at index, divide it by 
+                        // number of Simulations and add it to value at index in average_coords
+                        average_coords[index] += (*value as f32) / (data.len() as f32)
+                    }
+                }
+
+                // plotters requires coordinates to be in the form (f32, f32) 
+                let output = average_coords
+                    // Iterate over average_coords
+                    .iter_mut()
+                    // Get index of coords, elements are now (usize, f32)
+                    .enumerate()
+                    // Convert index from usize to f32, elements are now (f32, f32)
+                    .map(|(i, x)| (i as f32, *x))
+                    // Collect elements into new 
+                    .collect::<Vec<(f32, f32)>>();
+    
+                // Draw country data as a line graph on chart
+                chart.draw_series(LineSeries::new(output, &RED))?;
+
+                // Take root and present all charts, then outut final plot
+                root.present()?;
+            },
+
+            PlotOperator::DisplayAll => {
+
+                for sim in data {
+
+                    // Create vector for x & y coordinates from country data
+                    let country_coords: Vec<(f32, f32)> = sim
+                        .average_cost
+                        .iter()
+                        .enumerate()
+                        .map(|(x, y)| (x as f32, *y as f32))
+                        .collect::<Vec<(f32, f32)>>();
+        
+                    // Randomly select colour for the line
+                    let colour =  colours.choose(&mut thread_rng()).wrap_err("Could not pick colour for line plot")?;
+        
+                    // Draw country data as a line graoh on chart
+                    chart.draw_series(LineSeries::new(country_coords, colour))?;
+
+                    // Take root and present all charts, then outut final plot
+                    root.present()?;
+                }
+            },
+        };
 
         // Return OK if Function runs without error
         Ok(())
-}
-
-
-
-
+    }
 }

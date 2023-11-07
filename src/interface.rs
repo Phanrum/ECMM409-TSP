@@ -21,19 +21,25 @@ pub struct Cli {
     /// Number of Runs: Minumum 1.
     #[arg(value_parser = clap::value_parser!(u32).range(1..), default_value_t = 1, short, long)]
     pub number_runs: u32,
+    /// Which plot type to use:
+    #[arg(value_enum, default_value_t = PlotOperator::Average, short = 'o', long = "output-type")]
+    pub plot_operator: PlotOperator,
 }
 
 /// Enumerate that represents the possible state of the mutation type
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum)]
 pub enum MutationOperator {
 
-    /// Runs inversion mutation on the chromosomes
+    /// Alias: I, Runs inversion mutation on the chromosomes
+    #[value(alias("I"))]
     Inversion,
 
-    /// Runs single swap mutation on the chromosomes
+    /// Alias: S, Runs single swap mutation on the chromosomes
+    #[value(alias("S"))]
     Single,
 
-    /// Runs multiple swap mutation on the chromosomes
+    /// Alias: M, Runs multiple swap mutation on the chromosomes
+    #[value(alias("M"))]
     Multiple,
 }
 
@@ -41,9 +47,24 @@ pub enum MutationOperator {
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum)]
 pub enum CrossoverOperator {
 
-    /// Runs crossover with fix on the chromosomes
+    /// Alias: F, Runs crossover with fix on the chromosomes
+    #[value(alias("F"))]
     Fix,
 
-    /// Runs ordered crossover on the chromosomes
+    /// Alias: O, Runs ordered crossover on the chromosomes
+    #[value(alias("O"))]
     Ordered,
+}
+
+/// Enumerate that represents the possible type of the plot output
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum)]
+pub enum PlotOperator {
+
+    /// Alias: A, will output a single line averaging all simulations for each dataset
+    #[value(alias("A"))]
+    Average,
+
+    /// Alias: D, will output a seperate line for each simulation
+    #[value(alias("D"))]
+    DisplayAll,
 }
