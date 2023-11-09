@@ -1,26 +1,29 @@
-// Importing my programs modules
+// Importing some of my programs modules
 use tsp_coursework::{
         country::Country, 
         interface::*, 
         simulation::Simulation, 
         NUMBER_OF_GENERATIONS
     };
-// Importing thread and sync to allow for multithreading
-use std::{thread, sync::mpsc};
-// Import HashMap
-use std::collections::HashMap;
+
+// Importing some modules from the standard library
+use std::{
+    collections::HashMap,
+    fmt::Write,
+    sync::mpsc,
+    thread, 
+};
+
 // Here I am importing my external dependancies:
 // Clap is used to make the command line interface
 use clap::Parser;
 // Indicatif is used to create progress bars for the terminal
-// Import Write from standard library to output custom key
 use indicatif::{
         MultiProgress, 
         ProgressBar, 
         ProgressState, 
         ProgressStyle
     };
-use std::fmt::Write;
 // Colour_Eyre is used to neatly propagate errors
 use color_eyre::Result;
 

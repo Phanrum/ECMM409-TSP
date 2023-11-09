@@ -1,10 +1,10 @@
 //! This module defines the structure [`Simulation`] and methods for the Simulation of the [`Population`].
 
-use indicatif::ProgressBar;
-
 use color_eyre::{Result, eyre::ContextCompat};
-
-use crate::NUMBER_OF_GENERATIONS;
+use chrono::prelude::*;
+use indicatif::ProgressBar;
+use plotters::prelude::*;
+use rand::{thread_rng, seq::SliceRandom};
 
 use super::{
     chromosome::Chromosome, 
@@ -14,16 +14,9 @@ use super::{
         CrossoverOperator,
         PlotOperator
     }, 
-    population::Population
+    population::Population,
+    NUMBER_OF_GENERATIONS
 };
-
-use rand::{thread_rng, seq::SliceRandom};
-
-// Chrono is used to get the current time and date
-use chrono::prelude::*;
-
-// Plotters is used to create plots of the data
-use plotters::prelude::*;
 
 /// The `Simulation` type, which contains all the information needed to run the simultation
 pub struct Simulation {
@@ -125,6 +118,13 @@ impl Simulation {
 
     /// Define function to plot a graph of the best chromosome each generation
     pub fn plot(data: &Vec<Simulation>, plot_operator: PlotOperator, id: String) -> Result<()> {
+        // Check if a results directory exists
+        match std::fs::metadata("results") {
+            Ok(_) => (),
+            // If it doesnt, create it
+            Err(_) => std::fs::create_dir("results")?,
+        }
+
         // Current date and time
         let time: DateTime<Utc> = Utc::now();
 
@@ -191,12 +191,10 @@ impl Simulation {
         // Get array of colours
         let colours = [BLACK, BLUE, CYAN, GREEN, MAGENTA, RED, YELLOW];
 
-
+        // Pattern match on specified plot type
         match plot_operator {
             
             PlotOperator::Average => {
-
-
                 // Create vector for average coords with the length 
                 // equal to the length of the first Simulations average_cost
                 let mut average_coords: Vec<f32> = vec![0.0; data[0].average_cost.len()];
@@ -232,7 +230,7 @@ impl Simulation {
             },
 
             PlotOperator::DisplayAll => {
-
+                // Loop over every Simulation in data
                 for sim in data {
 
                     // Create vector for x & y coordinates from country data

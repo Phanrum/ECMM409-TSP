@@ -1,10 +1,10 @@
 //! This module creates the structure [`Country`] and methods to import data from
 //! an XML file and deserialize into a [`Country`] so that it can be used.
 
-use core::slice;
+use std::{fs,slice};
+
 use serde::Deserialize;
 use serde_xml_rs;
-use std::fs;
 use color_eyre::{eyre::WrapErr, Result};
 
 /// This struct defines the datatype of an Edge, which is the cost to get to a city as a float

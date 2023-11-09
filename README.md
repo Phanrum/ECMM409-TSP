@@ -7,6 +7,7 @@ This program requries rust installed to compile, however the executable file doe
 
 Please note, this program uses a plotter called [plotters](https://github.com/plotters-rs/plotters) which has certain dependencies.  
 
+
 ## Dependencies
 
 ### Ubuntu Linux
@@ -17,6 +18,7 @@ Please note, this program uses a plotter called [plotters](https://github.com/pl
 
 ### Windows/OSX
 No dependencies required
+
 
 ## Compiling Instructions
 
@@ -29,9 +31,11 @@ compile times.
 
 This will create a `target` directory with a `release` subdirectory, the binary will be located in this subdirectory called `tsp-coursework`
 
+
+
 # Running instructions
 
-The binary must be located in a directory containing a subdirectory called `data` which contains the xml files.
+The binary must be located in a directory containing a subdirectory called `data` which contains the XML files.
 
 You can then run the help command with:
 
@@ -45,40 +49,95 @@ which will display all the flags possible to change the behaviour of the program
 
 Simply running
 
-`./TSP`
+`./tsp-coursework`
 
-will use the defaults, which are:
-- Population size of 50
-- Tournament size of 5
-- Single Swap Mutation
-- Crossover with fix
+will use the defaults as described below.
 
-but up to all of these can be changed at once.
 
-## Examles
+## Flags explained
 
-`./TSP -p 10000 -t 1000 -c 1 -m 2`
+The program has defaults for all aspects, however all of these can be changed with the flags below.
 
-Program will run with:
-- Population of 10,000
-- Tournament Size of 1,000
-- Ordered Crossover
-- Multiple Swap Mutation
+### `-h`
 
----
+This will display a condensed help page for the program
 
-`./TSP -p 1000 -c 0`
+### `--help`
 
-Program will run with:
-- Population of 1,000
-- Default Tournament size of 5
-- Crossover with fix
-- Default Single Swap Mutation
+This will display a more extensive help page for the program
+
+### `-c` or `--crossover-operator`
+
+This flag has the options:
+
+#### `fix` or `F`
+#### This is the programs default flag.
+
+The program will use a crossover with fix to create child chromosomes.
+
+#### `ordered` or `O`
+
+The program will use an ordered crossover to create child chromosomes.
+
+### `-m` or `--mutation-operator`
+
+This flag has the options:
+
+#### `inversion` or `I`
+
+The program will use inversion mutation to mutate chromosomes.
+
+#### `single` or `S`
+#### This is the programs default flag.
+
+The program will use single swap mutation to mutate chromosomes.
+
+#### `multiple` or `M`
+
+The program will use multiple swap mutation to mutate chromosomes.
+
+### `-p` or `--population-size`
+
+#### Default population size is `50`
+#### Minimum population size is `10`
+
+This selects the size of the population of chromosomes for the program to use.
+This flag expects a number equal to or greater than 10 to be supplied.
+
+### `-t` or `--tournament-size`
+
+#### Default tournament size is `5`
+#### Minimum tournament size is `1`
+
+This selects the size of the tournament used.
+This flag expects a number equal to or greater than 1 and less than or equal to the tournament size to be supplied.
+
+### `-n` or `--number-runs`
+
+#### Default and Minimum is `1`
+
+This selects how many simulations of each dataset to run simultaneously.
+This flag expects a number equal to or greater than 1 to be supplied.
+
+### `-o` or `--output-type`
+
+This flag has the options:
+
+#### `average` or `A`
+#### This is the programs default flag.
+
+If multiple simulations have been run at once, this flag will average all their results together.
+
+#### `display-all` or `D`
+
+If multiple simulations have been run at once, this flag will output each result as a seperate line on the graph.
+
+
 
 # Documentation
 
 This code is extensivly commented throughout, however if you wish to read through the library for this code more comfortably then `Cargo` helfully allows that.
-Unfortunatly you wont be able to use this for my main.rs, as this is meant for libraries.
+Unfortunatly you wont be able to use this for my main.rs, as this is meant for libraries not applications.
 
 Running:
 
@@ -101,5 +160,5 @@ My dependencies were:
 - serde
 - serde-xml-rs
 
-All the other pages are dependencies of my dependencies
+All the other pages are the dependencies of my dependencies
 

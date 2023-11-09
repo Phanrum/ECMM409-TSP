@@ -9,10 +9,8 @@ use super::{
             CrossoverOperator
         }
     };
-
-
+    
 use rand::{thread_rng, seq::SliceRandom};
-
 use color_eyre::{eyre::ContextCompat, Result};
 
 /// The struct defines the population

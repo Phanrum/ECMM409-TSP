@@ -1,4 +1,7 @@
-// Clap is used to make the command line interface
+//! This module defines [`Cli`], [`MutationOperator`], 
+//! [`CrossoverOperator`] and [`PlotOperator`] for clap to use
+
+
 use clap::{Parser, ValueEnum};
 
 /// A Rust program to solve the Travelling Salesman Problem. It uses a steady state evolutionary algorithm

@@ -1,6 +1,6 @@
-//! This module defines the structure and methods for each [`Chromosome`] in the [`Population`][pop].
+//! This module defines the structure and methods for each [`Chromosome`] in the [`Population`].
 //! 
-//! [pop]: crate::population::Population
+//! [`Population`]: crate::population::Population
 
 use super::{
     country::Graph, 
@@ -9,6 +9,7 @@ use super::{
         CrossoverOperator
     }
 };
+
 use rand::{thread_rng, Rng, seq::{SliceRandom, index}};
 use std::cmp::Ordering;
 use color_eyre::{eyre::ContextCompat, Result};
@@ -301,6 +302,7 @@ impl Chromosome {
         graph: &Graph
     ) -> Result<(Chromosome, Chromosome)> {
 
+        // Pattern match on specified crossover type
         match crossover_operator {
             // Crossover with Fix
             CrossoverOperator::Fix => {
