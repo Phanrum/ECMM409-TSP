@@ -27,6 +27,9 @@ pub struct Cli {
     /// Which plot type to use:
     #[arg(value_enum, default_value_t = PlotOperator::Average, short = 'o', long = "output-type")]
     pub plot_operator: PlotOperator,
+    /// Which statistic from the simulation to plot:
+    #[arg(value_enum, default_value_t = PlotStatistic::Average, short, long)]
+    pub statistic_plotted: PlotStatistic,
 }
 
 /// Enumerate that represents the possible state of the mutation type
@@ -59,7 +62,7 @@ pub enum CrossoverOperator {
     Ordered,
 }
 
-/// Enumerate that represents the possible type of the plot output
+/// Enumerate that represents the possible types of the plot output
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum)]
 pub enum PlotOperator {
 
@@ -67,7 +70,35 @@ pub enum PlotOperator {
     #[value(alias("A"))]
     Average,
 
+    /// Alias: B, will output a single line showing the best simulation
+    #[value(alias("B"))]
+    Best,
+
+    /// Alias: W, will output a single line showing the worst simulation
+    #[value(alias("W"))]
+    Worst,
+
+    /// Alias: R, will output three lines showing the worst, best and average simulation
+    #[value(alias("R"))]
+    Range,
+
     /// Alias: D, will output a seperate line for each simulation
     #[value(alias("D"))]
     DisplayAll,
+}
+
+/// Enumerate that represents the possible statistics to plot
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum)]
+pub enum PlotStatistic {
+    /// Alias: A, will plot the best cost from each generation
+    #[value(alias("A"))]
+    Average,
+
+    /// Alias: B, will plot the best cost from each generation
+    #[value(alias("B"))]
+    Best,
+
+    /// Alias: W, will plot the worst cost from each generation
+    #[value(alias("W"))]
+    Worst,
 }

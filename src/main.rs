@@ -36,14 +36,22 @@ fn main() -> Result<()> {
     // Create varible of type CLI and parse in info from command line
     let cli = Cli::parse();
 
-    // If the user selects a tournament size equal to the population size, warn them
-    if cli.tournament_size == cli.population_size as u32 {
-        println!("Warning: Selected Tournament Size is equal to the population size");
-      // If the user selects a tournament size greater than the population size,
-      // exit the program with an error message
-    } else if cli.tournament_size > cli.population_size as u32 {
-        panic!("ERROR: Selected Tournament Size is greater than the population size")
+    // Compare given tournament size and population size
+    match cli.tournament_size.cmp(&(cli.population_size as u32)) {
+        // Do nothing if the user selects a tournament size lower than the population size
+        std::cmp::Ordering::Less => (),
+        // If the user selects a tournament size equal to the population size, warn them
+        std::cmp::Ordering::Equal => {
+            println!("Warning: Selected Tournament Size is equal to the population size");
+        },
+        // If the user selects a tournament size greater than the population size,
+        // exit the program with an error message
+        std::cmp::Ordering::Greater => {
+            panic!("ERROR: Selected Tournament Size is greater than the population size")
+        },
     }
+
+
 
     // Create object to manage multiple progress bars
     let multi_bar = MultiProgress::new();
@@ -141,9 +149,9 @@ fn main() -> Result<()> {
 
     // For each Simulation in ordered_data create a plot for it
     ordered_data.retain(|key: &String, data: &mut Vec<Simulation>| {
-        Simulation::plot(data, cli.plot_operator, key.clone()).expect("Plotting of Simulation failed");
+        Simulation::plot(data, cli.plot_operator, cli.statistic_plotted, cli.number_runs, key.clone()).expect("Plotting of Simulation failed");
         true
-    } );
+    });
 
     // End program
     Ok(())

@@ -4,16 +4,11 @@ use color_eyre::{Result, eyre::ContextCompat};
 use chrono::prelude::*;
 use indicatif::ProgressBar;
 use plotters::prelude::*;
-use rand::{thread_rng, seq::SliceRandom};
 
 use super::{
     chromosome::Chromosome, 
     country::Country, 
-    interface::{
-        MutationOperator, 
-        CrossoverOperator,
-        PlotOperator
-    }, 
+    interface::*,
     population::Population,
     NUMBER_OF_GENERATIONS
 };
@@ -117,7 +112,13 @@ impl Simulation {
     }
 
     /// Define function to plot a graph of the best chromosome each generation
-    pub fn plot(data: &Vec<Simulation>, plot_operator: PlotOperator, id: String) -> Result<()> {
+    pub fn plot(
+        data: &Vec<Simulation>, 
+        plot_operator: PlotOperator, 
+        statistic_plotted: PlotStatistic,
+        number_runs: u32, 
+        id: String
+    ) -> Result<()> {
         // Check if a results directory exists
         match std::fs::metadata("results") {
             Ok(_) => (),
@@ -163,8 +164,9 @@ impl Simulation {
 
         // Write caption for plot
         let caption: String = format!(
-            "TSP of dataset {}, Population size: {}, Tournament size: {}, Mutation: {:?}, Crossover: {:?}",
+            "TSP of dataset {}, Ran {} times, Population size: {}, Tournament size: {}, Mutation: {:?}, Crossover: {:?}",
             id, 
+            number_runs,
             data.first().unwrap().population_size, 
             data.first().unwrap().tournament_size,
             data.first().unwrap().mutation_operator,
@@ -188,8 +190,46 @@ impl Simulation {
             .y_desc("Average cost")
             .draw()?;
 
-        // Get array of colours
-        let colours = [BLACK, BLUE, CYAN, GREEN, MAGENTA, RED, YELLOW];
+
+        let mut data_simplified: Vec<Vec<f64>> = Vec::with_capacity(data.capacity());
+
+         match statistic_plotted {
+            PlotStatistic::Average => {
+                // Iterate over data
+                data.iter()
+                    // For each Simulation in data, push its average_cost field to data_simplified
+                    .for_each(|sim| data_simplified.push(sim.average_cost.clone()))
+
+            },
+            PlotStatistic::Best => {
+                // Iterate over data
+                data.iter().for_each(|sim| {
+                    data_simplified
+                        // Iterate over the best chromosome field in the Simulation, collect its costs into a vector
+                        // and push this vector to data_simplified
+                        .push({sim
+                            .best_chromosome
+                            .iter()
+                            .map(|chromo| chromo.cost)
+                            .collect::<Vec<f64>>()
+                        })
+                })
+            },
+            PlotStatistic::Worst => {
+                // Iterate over data
+                data.iter().for_each(|sim| {
+                    data_simplified
+                        // Iterate over the worst chromosome field in the Simulation, collect its costs into a vector
+                        // and push this vector to data_simplified
+                        .push({sim
+                            .worst_chromosome
+                            .iter()
+                            .map(|chromo| chromo.cost)
+                            .collect::<Vec<f64>>()
+                        })
+                })
+            },
+        };
 
         // Pattern match on specified plot type
         match plot_operator {
@@ -197,19 +237,17 @@ impl Simulation {
             PlotOperator::Average => {
                 // Create vector for average coords with the length 
                 // equal to the length of the first Simulations average_cost
-                let mut average_coords: Vec<f32> = vec![0.0; data[0].average_cost.len()];
+                let mut average_coords: Vec<f32> = vec![0.0; data_simplified[0].len()];
 
-                // Loop over every Simulation in data
-                for sim in data {
-
-                    // Loop over every elemt in the Simulations average_cost vector
-                    for (index, value) in sim.average_cost.iter().enumerate() {
-
-                        // Get value of Simulations average_cost at index, divide it by 
-                        // number of Simulations and add it to value at index in average_coords
-                        average_coords[index] += (*value as f32) / (data.len() as f32)
-                    }
-                }
+                // Loop over every array in data_simplified
+                data_simplified.iter().for_each(|array| {
+                    // Loop over every element in the array
+                    array.iter().enumerate().for_each(|(index, value)| {
+                        // Get value of array at index, divide it by 
+                        // number of arrays and add it to value at index in average_coords
+                        average_coords[index] += (*value as f32) / (data_simplified.len() as f32)
+                    })
+                });
 
                 // plotters requires coordinates to be in the form (f32, f32) 
                 let output: Vec<(f32, f32)> = average_coords
@@ -223,7 +261,133 @@ impl Simulation {
                     .collect::<Vec<(f32, f32)>>();
     
                 // Draw country data as a line graph on chart
-                chart.draw_series(LineSeries::new(output, &RED))?;
+                chart.draw_series(LineSeries::new(output, RED.mix(0.9).stroke_width(2)))?;
+
+                // Take root and present all charts, then outut final plot
+                root.present()?;
+            },
+
+            PlotOperator::Best => {
+                
+                let country_coords: Vec<(f32, f32)> = data_simplified
+                    .iter()
+                    .min_by(|x, y| { x.last()
+                        .unwrap()
+                        .partial_cmp(y
+                            .last().unwrap()
+                        ).unwrap()
+                    }).wrap_err("Could not find Chromosome data in Simulation")?
+                    .iter()
+                    .enumerate()
+                    .map(|(x, y)| (x as f32, *y as f32))
+                    .collect::<Vec<(f32, f32)>>();
+
+                    // Draw country data as a line graoh on chart
+                    chart.draw_series(LineSeries::new(country_coords, RED.mix(0.9).stroke_width(2)))?;
+
+                    // Take root and present all charts, then outut final plot
+                    root.present()?;
+
+            },
+
+            PlotOperator::Worst => {
+                
+                let country_coords: Vec<(f32, f32)> = data_simplified
+                    .iter()
+                    .max_by(|x, y| { x.last()
+                        .unwrap()
+                        .partial_cmp(y
+                            .last().unwrap()
+                        ).unwrap()
+                    }).wrap_err("Could not find Chromosome data in Simulation")?
+                    .iter()
+                    .enumerate()
+                    .map(|(x, y)| (x as f32, *y as f32))
+                    .collect::<Vec<(f32, f32)>>();
+
+                    // Draw country data as a line graoh on chart
+                    chart.draw_series(LineSeries::new(country_coords, RED.mix(0.9).stroke_width(2)))?;
+
+                    // Take root and present all charts, then outut final plot
+                    root.present()?;
+            },
+
+            PlotOperator::Range => {
+
+                // Create vector for average coords with the length 
+                // equal to the length of the first Simulations average_cost
+                let mut average_coords: Vec<f32> = vec![0.0; data_simplified[0].len()];
+
+
+                let worst_coords: Vec<(f32, f32)> = data_simplified
+                    .iter()
+                    .max_by(|x, y| { x.last()
+                        .unwrap()
+                        .partial_cmp(y
+                            .last().unwrap()
+                        ).unwrap()
+                    }).wrap_err("Could not find Chromosome data in Simulation")?
+                    .iter()
+                    .enumerate()
+                    .map(|(x, y)| (x as f32, *y as f32))
+                    .collect::<Vec<(f32, f32)>>();
+
+
+                let best_coords: Vec<(f32, f32)> = data_simplified
+                    .iter()
+                    .min_by(|x, y| { x.last()
+                        .unwrap()
+                        .partial_cmp(y
+                            .last().unwrap()
+                        ).unwrap()
+                    }).wrap_err("Could not find Chromosome data in Simulation")?
+                    .iter()
+                    .enumerate()
+                    .map(|(x, y)| (x as f32, *y as f32))
+                    .collect::<Vec<(f32, f32)>>();
+
+                // Loop over every array in data_simplified
+                data_simplified.iter().for_each(|array| {
+                    // Loop over every element in the array
+                    array.iter().enumerate().for_each(|(index, value)| {
+                        // Get value of array at index, divide it by 
+                        // number of arrays and add it to value at index in average_coords
+                        average_coords[index] += (*value as f32) / (data_simplified.len() as f32)
+                    })
+                });
+
+                // plotters requires coordinates to be in the form (f32, f32) 
+                let output: Vec<(f32, f32)> = average_coords
+                    // Iterate over average_coords
+                    .iter_mut()
+                    // Get index of coords, elements are now (usize, f32)
+                    .enumerate()
+                    // Convert index from usize to f32, elements are now (f32, f32)
+                    .map(|(i, x)| (i as f32, *x))
+                    // Collect elements into new vector
+                    .collect::<Vec<(f32, f32)>>();
+
+
+                // Draw Worst Chromosome data as a line graoh on chart
+                chart.draw_series(LineSeries::new(worst_coords, RED.mix(0.9).stroke_width(2)))?
+                    .label("Worst Simulation")
+                    .legend(|(x, y)| Rectangle::new([(x, y - 5), (x + 10, y + 5)], RED.mix(0.9).filled()));
+
+                // Draw Average Chromosome data as a line graph on chart
+                chart.draw_series(LineSeries::new(output, BLUE.mix(0.9).stroke_width(2)))?
+                    .label("Average Simulation")
+                    .legend(|(x, y)| Rectangle::new([(x, y - 5), (x + 10, y + 5)], BLUE.mix(0.9).filled()));
+
+                // Draw Best Chromosome data as a line graoh on chart
+                chart.draw_series(LineSeries::new(best_coords, GREEN.mix(0.9).stroke_width(2)))?
+                    .label("Best Simulation")
+                    .legend(|(x, y)| Rectangle::new([(x, y - 5), (x + 10, y + 5)], GREEN.mix(0.9).filled()));
+
+                // Draw legend on graph
+                chart.configure_series_labels()
+                    .background_style(&WHITE.mix(0.8))
+                    .border_style(&BLACK)
+                    .draw()?;
 
                 // Take root and present all charts, then outut final plot
                 root.present()?;
@@ -231,25 +395,32 @@ impl Simulation {
 
             PlotOperator::DisplayAll => {
                 // Loop over every Simulation in data
-                for sim in data {
+                for (index, array) in data_simplified.iter().enumerate() {
 
                     // Create vector for x & y coordinates from country data
-                    let country_coords: Vec<(f32, f32)> = sim
-                        .average_cost
+                    let country_coords: Vec<(f32, f32)> = array
                         .iter()
                         .enumerate()
                         .map(|(x, y)| (x as f32, *y as f32))
                         .collect::<Vec<(f32, f32)>>();
         
                     // Randomly select colour for the line
-                    let colour =  colours.choose(&mut thread_rng()).wrap_err("Could not pick colour for line plot")?;
-        
-                    // Draw country data as a line graoh on chart
-                    chart.draw_series(LineSeries::new(country_coords, colour))?;
+                    let colour =  Palette99::pick(index).mix(0.9);
 
-                    // Take root and present all charts, then outut final plot
-                    root.present()?;
+                    // Draw country data as a line graoh on chart
+                    chart.draw_series(LineSeries::new(country_coords, colour.stroke_width(2)))?
+                        .label(format!("Simulation {}", index + 1))
+                        .legend(move |(x, y)| Rectangle::new([(x, y - 5), (x + 10, y + 5)], colour.filled()));
                 }
+
+                // Draw legend on graph
+                chart.configure_series_labels()
+                    .background_style(&WHITE.mix(0.8))
+                    .border_style(&BLACK)
+                    .draw()?;
+
+                // Take root and present all charts, then outut final plot
+                root.present()?;
             },
         };
 
