@@ -5,4 +5,4 @@ pub mod simulation;
 pub mod interface;
 
 /// This is hardcoded for the course requirement
-pub const NUMBER_OF_GENERATIONS: usize = 10000;
+pub const NUMBER_OF_GENERATIONS: usize = 10_000;

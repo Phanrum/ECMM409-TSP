@@ -13,7 +13,7 @@ use super::{
     NUMBER_OF_GENERATIONS
 };
 
-/// The `Simulation` type, which contains all the information needed to run the simultation
+/// The `Simulation` type, which contains all the information needed to run the simulation
 pub struct Simulation {
     /// Data for the country
     pub country_data: Country,
@@ -49,7 +49,7 @@ impl Simulation {
     ) -> Result<Self> {
         let new_population = Population::new(population_size, &country_data.graph)?;
 
-        // Allocate these veectors now with the correct capacity so they dont keep reallocating as they grow.
+        // Allocate these vectors now with the correct capacity so they don't keep reallocating as they grow.
         // They are + 1 because the population starts with these all having one value in them already
         let mut best_chromosome: Vec<Chromosome> =
             Vec::with_capacity(NUMBER_OF_GENERATIONS + 1);
@@ -122,7 +122,7 @@ impl Simulation {
         // Check if a results directory exists
         match std::fs::metadata("results") {
             Ok(_) => (),
-            // If it doesnt, create it
+            // If it doesn't, create it
             Err(_) => std::fs::create_dir("results")?,
         }
 
@@ -235,7 +235,7 @@ impl Simulation {
         match plot_operator {
             
             PlotOperator::Average => {
-                // Create vector for average coords with the length 
+                // Create vector for average co-ords with the length 
                 // equal to the length of the first Simulations average_cost
                 let mut average_coords: Vec<f32> = vec![0.0; data_simplified[0].len()];
 
@@ -253,17 +253,22 @@ impl Simulation {
                 let output: Vec<(f32, f32)> = average_coords
                     // Iterate over average_coords
                     .iter_mut()
-                    // Get index of coords, elements are now (usize, f32)
+                    // Get index of co-ords, elements are now (usize, f32)
                     .enumerate()
                     // Convert index from usize to f32, elements are now (f32, f32)
                     .map(|(i, x)| (i as f32, *x))
                     // Collect elements into new 
                     .collect::<Vec<(f32, f32)>>();
+
+                // Get final cost of average Simulation
+                let average_final = output.last().wrap_err("Chromosome data not found")?.1;
     
                 // Draw country data as a line graph on chart
                 chart.draw_series(LineSeries::new(output, RED.mix(0.9).stroke_width(2)))?;
 
-                // Take root and present all charts, then outut final plot
+                println!("Last cost of {} best simulation: {}", id, average_final);
+
+                // Take root and present all charts, then output final plot
                 root.present()?;
             },
 
@@ -282,11 +287,16 @@ impl Simulation {
                     .map(|(x, y)| (x as f32, *y as f32))
                     .collect::<Vec<(f32, f32)>>();
 
-                    // Draw country data as a line graoh on chart
-                    chart.draw_series(LineSeries::new(country_coords, RED.mix(0.9).stroke_width(2)))?;
+                // Get final cost of best Simulation
+                let best_final = country_coords.last().wrap_err("Chromosome data not found")?.1;
 
-                    // Take root and present all charts, then outut final plot
-                    root.present()?;
+                // Draw country data as a line graph on chart
+                chart.draw_series(LineSeries::new(country_coords, RED.mix(0.9).stroke_width(2)))?;
+
+                println!("Last cost of {} best simulation: {}", id, best_final);
+
+                // Take root and present all charts, then output final plot
+                root.present()?;
 
             },
 
@@ -305,19 +315,19 @@ impl Simulation {
                     .map(|(x, y)| (x as f32, *y as f32))
                     .collect::<Vec<(f32, f32)>>();
 
-                    // Draw country data as a line graoh on chart
-                    chart.draw_series(LineSeries::new(country_coords, RED.mix(0.9).stroke_width(2)))?;
+                // Get final cost of worst Simulation
+                let worst_final = country_coords.last().wrap_err("Chromosome data not found")?.1;
 
-                    // Take root and present all charts, then outut final plot
-                    root.present()?;
+                // Draw country data as a line graph on chart
+                chart.draw_series(LineSeries::new(country_coords, RED.mix(0.9).stroke_width(2)))?;
+
+                println!("Last cost of {} worst simulation: {}",id , worst_final);
+
+                // Take root and present all charts, then output final plot
+                root.present()?;
             },
 
             PlotOperator::Range => {
-
-                // Create vector for average coords with the length 
-                // equal to the length of the first Simulations average_cost
-                let mut average_coords: Vec<f32> = vec![0.0; data_simplified[0].len()];
-
 
                 let worst_coords: Vec<(f32, f32)> = data_simplified
                     .iter()
@@ -331,6 +341,9 @@ impl Simulation {
                     .enumerate()
                     .map(|(x, y)| (x as f32, *y as f32))
                     .collect::<Vec<(f32, f32)>>();
+
+                // Get final cost of worst Simulation
+                let worst_final = worst_coords.last().wrap_err("Chromosome data not found")?.1;
 
 
                 let best_coords: Vec<(f32, f32)> = data_simplified
@@ -346,6 +359,13 @@ impl Simulation {
                     .map(|(x, y)| (x as f32, *y as f32))
                     .collect::<Vec<(f32, f32)>>();
 
+                // Get final cost of best Simulation
+                let best_final = best_coords.last().wrap_err("Chromosome data not found")?.1;
+
+                // Create vector for average co-ords with the length 
+                // equal to the length of the first Simulations average_cost
+                let mut average_coords: Vec<f32> = vec![0.0; data_simplified[0].len()];
+
                 // Loop over every array in data_simplified
                 data_simplified.iter().for_each(|array| {
                     // Loop over every element in the array
@@ -360,15 +380,17 @@ impl Simulation {
                 let output: Vec<(f32, f32)> = average_coords
                     // Iterate over average_coords
                     .iter_mut()
-                    // Get index of coords, elements are now (usize, f32)
+                    // Get index of co-ords, elements are now (usize, f32)
                     .enumerate()
                     // Convert index from usize to f32, elements are now (f32, f32)
                     .map(|(i, x)| (i as f32, *x))
                     // Collect elements into new vector
                     .collect::<Vec<(f32, f32)>>();
 
+                // Get final cost of average Simulation
+                let average_final = output.last().wrap_err("Chromosome data not found")?.1;
 
-                // Draw Worst Chromosome data as a line graoh on chart
+                // Draw Worst Chromosome data as a line graph on chart
                 chart.draw_series(LineSeries::new(worst_coords, RED.mix(0.9).stroke_width(2)))?
                     .label("Worst Simulation")
                     .legend(|(x, y)| Rectangle::new([(x, y - 5), (x + 10, y + 5)], RED.mix(0.9).filled()));
@@ -378,7 +400,7 @@ impl Simulation {
                     .label("Average Simulation")
                     .legend(|(x, y)| Rectangle::new([(x, y - 5), (x + 10, y + 5)], BLUE.mix(0.9).filled()));
 
-                // Draw Best Chromosome data as a line graoh on chart
+                // Draw Best Chromosome data as a line graph on chart
                 chart.draw_series(LineSeries::new(best_coords, GREEN.mix(0.9).stroke_width(2)))?
                     .label("Best Simulation")
                     .legend(|(x, y)| Rectangle::new([(x, y - 5), (x + 10, y + 5)], GREEN.mix(0.9).filled()));
@@ -389,7 +411,11 @@ impl Simulation {
                     .border_style(&BLACK)
                     .draw()?;
 
-                // Take root and present all charts, then outut final plot
+                println!("Last cost of {} worst simulation: {}",id , worst_final);
+                println!("Last cost of {} best simulation: {}", id, best_final);
+                println!("Last cost of {} average simulation: {}", id, average_final);
+
+                // Take root and present all charts, then output final plot
                 root.present()?;
             },
 
@@ -407,10 +433,16 @@ impl Simulation {
                     // Randomly select colour for the line
                     let colour =  Palette99::pick(index).mix(0.9);
 
-                    // Draw country data as a line graoh on chart
+                    // Get final cost of Simulation
+                    let country_final = country_coords.last().wrap_err("Chromosome data not found")?.1;
+
+                    // Draw country data as a line graph on chart
                     chart.draw_series(LineSeries::new(country_coords, colour.stroke_width(2)))?
                         .label(format!("Simulation {}", index + 1))
                         .legend(move |(x, y)| Rectangle::new([(x, y - 5), (x + 10, y + 5)], colour.filled()));
+
+                    // Output final cost
+                    println!("Last cost of {} simulation {}: {}", id, index + 1, country_final);
                 }
 
                 // Draw legend on graph
@@ -419,7 +451,7 @@ impl Simulation {
                     .border_style(&BLACK)
                     .draw()?;
 
-                // Take root and present all charts, then outut final plot
+                // Take root and present all charts, then output final plot
                 root.present()?;
             },
         };

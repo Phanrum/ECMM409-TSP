@@ -14,7 +14,7 @@ use std::{
     thread, 
 };
 
-// Here I am importing my external dependancies:
+// Here I am importing my external dependencies:
 // Clap is used to make the command line interface
 use clap::Parser;
 // Indicatif is used to create progress bars for the terminal
@@ -33,7 +33,7 @@ fn main() -> Result<()> {
     // Setup color_eyre so errors output nicely
     color_eyre::install()?;
 
-    // Create varible of type CLI and parse in info from command line
+    // Create variable of type CLI and parse in info from command line
     let cli = Cli::parse();
 
     // Compare given tournament size and population size
@@ -50,8 +50,6 @@ fn main() -> Result<()> {
             panic!("ERROR: Selected Tournament Size is greater than the population size")
         },
     }
-
-
 
     // Create object to manage multiple progress bars
     let multi_bar = MultiProgress::new();
@@ -82,7 +80,7 @@ fn main() -> Result<()> {
     // Loop for number of runs specified
     for _ in 0..cli.number_runs {
 
-        // Loop over each seperate file in the directory
+        // Loop over each separate file in the directory
         for country in &input_data {
 
             // Clone transmitter so the thread will have a unique one
@@ -133,7 +131,7 @@ fn main() -> Result<()> {
         thread.join().expect("Threads panicked")?;
     }
 
-    // Create a hashmap to store all the simulations by their names
+    // Create a HashMap to store all the simulations by their names
     let mut ordered_data: HashMap<String, Vec<Simulation>> = HashMap::with_capacity(output_data.capacity());
 
     // Loop over each Simulation in output_data
@@ -141,7 +139,7 @@ fn main() -> Result<()> {
         ordered_data
             // Get the entry of the key, where the key is the name out the country used
             .entry(sim.country_data.name.clone())
-            // If that key doesnt exist yet, create it and set its entry to be an empty vector
+            // If that key doesn't exist yet, create it and set its entry to be an empty vector
             .or_default()
             // Push the Simulation into the entry
             .push(sim);

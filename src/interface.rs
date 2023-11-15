@@ -21,7 +21,7 @@ pub struct Cli {
     /// Tournament size: Minimum 2. Cannot exceed population size
     #[arg(value_parser = clap::value_parser!(u32).range(2..), default_value_t = 5, short, long)]
     pub tournament_size: u32,
-    /// Number of Runs: Minumum 1.
+    /// Number of Runs: Minimum 1.
     #[arg(value_parser = clap::value_parser!(u32).range(1..), default_value_t = 1, short, long)]
     pub number_runs: u32,
     /// Which plot type to use:
@@ -82,7 +82,7 @@ pub enum PlotOperator {
     #[value(alias("R"))]
     Range,
 
-    /// Alias: D, will output a seperate line for each simulation
+    /// Alias: D, will output a separate line for each simulation
     #[value(alias("D"))]
     DisplayAll,
 }

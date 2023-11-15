@@ -1,9 +1,9 @@
 # ECMM409-TSP
 A Rust program to solve the Travelling Salesman Problem. It uses a steady state evolutionary algorithm and assumes its given an XML file detailing the costs associated with travel between each city.
 
-# Instalation instructions
+# Installation instructions
 
-This program requries rust installed to compile, however the executable file does not require rust to run.
+This program requires rust installed to compile, however the executable file does not require rust to run.
 
 Please note, this program uses a plotter called [plotters](https://github.com/plotters-rs/plotters) which has certain dependencies listed below.  
 
@@ -29,13 +29,13 @@ To compile, in your terminal run the command:
 This `--release` flag is important as it makes the compiler optimise the program, allowing it to run significantly faster - with the trade off being slightly longer
 compile times.
 
-This will create a `target` directory with a `release` subdirectory, the binary will be located in this subdirectory called `tsp-coursework`
+This will create a `target` directory with a `release` sub-directory, the binary will be located in this sub-directory called `tsp-coursework`
 
 
 
 # Running instructions
 
-The binary must be located in a directory containing a subdirectory called `data` which contains the XML files.
+The binary must be located in a directory containing a sub-directory called `data` which contains the XML files.
 
 You can then run the help command with:
 
@@ -165,14 +165,14 @@ Will plot the worst cost found in each generation in a simulation.
 
 # Documentation
 
-This code is extensivly commented throughout, however if you wish to read through the library for this code more comfortably then `Cargo` helfully allows that.
-Unfortunatly you wont be able to use this for my main.rs, as this is meant for libraries not applications.
+This code is extensively commented throughout, however if you wish to read through the library for this code more comfortably then `Cargo` helpfully allows that.
+Unfortunately you wont be able to use command to read through main.rs, as this is meant for libraries not applications.
 
 Running:
 
 `cargo doc --no-deps --open`
 
-Will open a page on your browers containing all my libraries functions with their comments rendered in marckdown. You can also see the underlying source code of 
+Will open a page on your browsers containing all my libraries functions with their comments rendered in markdown. You can also see the underlying source code of 
 any function, impl block, struct etc with the *source* button located to their right.
 
 If you wish to read through the documentation including the dependencies I brought in for this project, you can run

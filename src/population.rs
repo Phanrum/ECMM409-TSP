@@ -13,7 +13,7 @@ use super::{
 use rand::{thread_rng, seq::SliceRandom};
 use color_eyre::{eyre::ContextCompat, Result};
 
-/// The struct defines the population
+/// The Struct defines the population
 #[derive(Clone)]
 pub struct Population {
     /// The number of individuals for this population.
@@ -88,7 +88,7 @@ impl Population {
         Ok(worst.to_owned())
     }
 
-    /// A function to find the best Cromosome in the population
+    /// A function to find the best Chromosome in the population
     pub fn find_best_chromosome(population_data: &[Chromosome]) -> Result<Chromosome> {
         let best = population_data
             .iter()
@@ -127,7 +127,7 @@ impl Population {
             .cloned()
             .collect();
 
-        // Sort our tournament_population (using the custom implementation of PartialOrd) by cost - this restults in lowest cost first
+        // Sort our tournament_population (using the custom implementation of PartialOrd) by cost - this results in lowest cost first
         tournament_population.sort_by(|x, y| x.partial_cmp(y).unwrap());
 
         // Remove and return the first index (and therefore cheapest chromosome) from the tournament population

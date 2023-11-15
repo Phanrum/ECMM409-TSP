@@ -7,7 +7,7 @@ use serde::Deserialize;
 use serde_xml_rs;
 use color_eyre::{eyre::WrapErr, Result};
 
-/// This struct defines the datatype of an Edge, which is the cost to get to a city as a float
+/// This Struct defines the datatype of an Edge, which is the cost to get to a city as a float
 #[derive(Clone, Debug, Deserialize)]
 pub struct Edge {
     pub cost: f64,
@@ -15,7 +15,7 @@ pub struct Edge {
     pub destination_city: u32,
 }
 
-/// This struct defines the Vertex, which is a Vector containing all the edges of a specific city
+/// This Struct defines the Vertex, which is a Vector containing all the edges of a specific city
 #[derive(Clone, Debug, Deserialize)]
 pub struct Vertex {
     #[serde(rename = "edge")]
@@ -32,13 +32,13 @@ impl<'a> IntoIterator for &'a Vertex {
     }
 }
 
-/// This struct defines the graph, which is a Vector of all the Vertexs
+/// This Struct defines the graph, which is a Vector of all the Vertexs
 #[derive(Clone, Debug, Deserialize)]
 pub struct Graph {
     pub vertex: Vec<Vertex>,
 }
 
-/// This struct defines the root data structure containing all the information from the XML file
+/// This Struct defines the root data structure containing all the information from the XML file
 /// Attributes are used to rename these fields during deserialization so they match those in the XML file
 #[derive(Clone, Debug, Deserialize)]
 #[serde(rename = "travellingSalesmanProblemInstance")]
@@ -55,7 +55,7 @@ pub struct Country {
 /// Implement methods on `Country`
 impl Country {
     /// Function to create the root structure for each countries XML file
-    /// Due to there only being two files I have hardcoded Brazil as True and Burma as False so that no errors with intergers or strings can occur
+    /// that is found in the data directory
     pub fn new() -> Result<Vec<Self>> {
         // Create iterator over all files in data/ directory
         let directory = fs::read_dir("data/")?;
@@ -66,7 +66,7 @@ impl Country {
         for file in  directory {
             // Imports the XML file as a String
             let src: String = fs::read_to_string(file?.path()).wrap_err("Failed to read XML file")?;
-            // Convert String to &str and use serde_xml_rs to deserialize into the struct Country
+            // Convert String to &str and use serde_xml_rs to deserialize into the Struct Country
             let data: Self = serde_xml_rs::from_str(src.as_str()).wrap_err("Failed to deserialize XML data")?;
             // Push Country to the output vector
             output.push(data);

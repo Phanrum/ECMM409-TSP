@@ -28,9 +28,9 @@ impl PartialEq for Chromosome {
     }
 }
 
-/// Implements [`PartialOrd`] for Chromosome so that two chromosomes can be correctly compared on cost.
-/// Rust will not implement Ordering for floats, therefore I have to cast them to intergers for the comparison.
-/// All costs in the XML file were given in scientific notation but fortunatly all expand out to intergers so this is possible
+/// Implements [`PartialOrd`] for Chromosome so that two chromosomes can be correctly ordered on cost.
+/// Rust will not implement Ordering for floats, therefore I have to cast them to integers for the comparison.
+/// All costs in the XML file were given in scientific notation but fortunately all expand out to integers so this is possible
 impl PartialOrd for Chromosome {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         Some((self.cost as usize).cmp(&(other.cost as usize)))
@@ -51,8 +51,8 @@ impl Chromosome {
 
     /// Function to randomly generate a [`Chromosome`]
     pub fn generation(graph: &Graph) -> Result<Self> {
-        // Takes a reference to the number of cities (which is the length of the graph vector) and return Self with a randomised route through those citites
-        // The route is the order the city appears in the vector whilst the number of the city relates to its index in the Graph struct
+        // Takes a reference to the number of cities (which is the length of the graph vector) and return Self with a randomised route through those cities
+        // The route is the order the city appears in the vector whilst the number of the city relates to its index in the Graph Struct
 
         // Calculated the number of cities from the length of the vertex matrix
         let num_cities: usize = graph.vertex.len();
@@ -75,7 +75,7 @@ impl Chromosome {
     /// Like rust .. format first index is inclusive and second_index is exclusive
     /// Therefore it must be ensured that they are not the same
     pub fn inversion(&mut self, first_index: usize, second_index: usize) {
-        // Create an empty vector with preallocated capacity to improve performace
+        // Create an empty vector with preallocated capacity to improve performance
         let mut new_route: Vec<u32> = Vec::with_capacity(self.route.len());
 
         // Split the old route into a slice containing all genes before first_index and a slice containing the rest
@@ -101,7 +101,7 @@ impl Chromosome {
 
     /// Function to mutate a [`Chromosome`]s genes using multiple different methods
     pub fn mutation(&mut self, mutation_operator: MutationOperator, graph: &Graph) -> Result<()> {
-        // Pattern match off enum MutationOperator
+        // Pattern match off Enum MutationOperator
         match mutation_operator {
             // Inversion
             MutationOperator::Inversion => {
@@ -177,7 +177,7 @@ impl Chromosome {
         // Create a list containing every gene
         let master_list: Vec<u32> = (0..child.len() as u32).collect();
 
-        // Only child.len() - crossover_point genes are swapped so thats the maximun number that could be duplicated
+        // Only child.len() - crossover_point genes are swapped so that the maximum number that could be duplicated
         let mut missing_gene: Vec<u32> = Vec::with_capacity(child.len() - crossover_point);
 
         // Iterate over the master_list and add each missing gene to missing_gene
@@ -215,7 +215,7 @@ impl Chromosome {
         }
     }
 
-    /// Function to return the ordered crossover of two parents given the indicies to take the crossover slices 
+    /// Function to return the ordered crossover of two parents given the indices to take the crossover slices 
     /// 
     /// An ordered crossover is taking two slices from the parent and keeping those genes the same in the child,
     /// but then reordering the genes outside those slices into the order they appear in the second parent
@@ -227,10 +227,10 @@ impl Chromosome {
         // Define first and second slice using the crossover points
         let first_slice: &[u32] = first_parent
             .get(crossover_points[0]..=crossover_points[1])
-            .wrap_err("Error, could not optain Chromosome data")?;
+            .wrap_err("Error, could not obtain Chromosome data")?;
         let second_slice: &[u32] = first_parent
             .get(crossover_points[2]..=crossover_points[3])
-            .wrap_err("Error, could not optain Chromosome data")?;
+            .wrap_err("Error, could not obtain Chromosome data")?;
 
         // Set each value to maximum of u32 for pattern matching
         let mut child: Vec<u32> = vec![u32::MAX; first_parent.len()];
@@ -252,10 +252,10 @@ impl Chromosome {
             .copied()
             .collect::<Vec<u32>>();
 
-        // Create a vector to hold the order the remainder elements shoukd be added back with
+        // Create a vector to hold the order the remainder elements should be added back with
         let mut replacement: Vec<(usize, u32)> = Vec::with_capacity(remainder.len());
 
-        // For each missing value in remainder, find it index in second parent and add that to relacement
+        // For each missing value in remainder, find it index in second parent and add that to replacement
         for value in remainder {
             replacement.push(
                 second_parent
@@ -268,7 +268,7 @@ impl Chromosome {
             );
         }
 
-        // Sort this vector by its indicies
+        // Sort this vector by its indices
         replacement.sort_by(|(i, _), (j, _)| i.partial_cmp(j).unwrap());
 
         // Loop over each gene in replacement
@@ -317,7 +317,7 @@ impl Chromosome {
                 let (first_parent_prefix, first_parent_suffix) = first_parent.split_at(crossover_point);
                 let (second_parent_prefix, second_parent_suffix) = second_parent.split_at(crossover_point);
                 
-                // Use .concat() method to flatten slice. _parent is on the left side and _crossover is onthe right side to preserve order
+                // Use .concat() method to flatten slice. _parent is on the left side and _crossover is on the right side to preserve order
                 let mut first_child: Vec<u32> = [first_parent_prefix, second_parent_suffix].concat();
                 let mut second_child: Vec<u32> = [second_parent_prefix, first_parent_suffix].concat();
 
@@ -347,7 +347,7 @@ impl Chromosome {
                 let first_parent: &&[u32] = &self.route.as_slice();
                 let second_parent: &&[u32] = &other.route.as_slice();
 
-                // Select 4 crossover points so that two slices can be taken from the parent, sort them so slices dont overlap
+                // Select 4 crossover points so that two slices can be taken from the parent, sort them so slices don't overlap
                 let mut crossover_points: Vec<usize> = index::sample(&mut thread_rng(), self.route.len(), 4).into_vec();
                 crossover_points.sort();
 
