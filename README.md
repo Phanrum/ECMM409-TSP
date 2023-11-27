@@ -4,11 +4,12 @@ A Rust program to solve the Travelling Salesman Problem. It uses a steady state 
 # Installation instructions
 
 This program requires rust installed to compile, however the executable file does not require rust to run.
-
-Please note, this program uses a plotter called [plotters](https://github.com/plotters-rs/plotters) which has certain dependencies listed below.  
-
+As I do not have a MAC, I was unable to cross-compile this program to OSX. IF you do not have a windows or linux machine,
+please manually complile the program via the instructions below.
 
 ## Dependencies
+
+Please note, this program uses a plotter called [plotters](https://github.com/plotters-rs/plotters) which has certain dependencies listed below.  
 
 ### Ubuntu Linux
 `cmake pkg-config libfreetype6-dev libfontconfig1-dev`
